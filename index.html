@@ -6,7 +6,14 @@
   <title>MAOS — Catálogo</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="catalog-page maos-minimal-v28">
+<body class="catalog-page maos-minimal-v28 catalog-is-loading">
+  <div id="catalogLoader" class="catalog-loader is-active" aria-live="polite" aria-label="Cargando catálogo">
+    <div class="catalog-loader-card">
+      <div class="loader-brand" id="loaderBrand">MAOS</div>
+      <div class="loader-line"></div>
+      <p>Cargando catálogo</p>
+    </div>
+  </div>
   <header class="minimal-sitebar">
     <div></div>
     <p>PEDIDO DIRECTO POR WHATSAPP · CATÁLOGO PÚBLICO MAOS</p>

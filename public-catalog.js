@@ -15,6 +15,16 @@ let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', logo_url: '', store_whats
 const $ = (s, p=document) => p.querySelector(s);
 const $$ = (s, p=document) => [...p.querySelectorAll(s)];
 
+function setCatalogLoading(isLoading) {
+  const loader = $('#catalogLoader');
+  document.body.classList.toggle('catalog-is-loading', isLoading);
+  if (loader) loader.classList.toggle('is-active', isLoading);
+}
+
+function hideCatalogLoader() {
+  setTimeout(() => setCatalogLoading(false), 260);
+}
+
 function unique(list) { return [...new Set(list.map(x => String(x || '').trim()).filter(Boolean))]; }
 function productImages(product) { return [...(product.product_images || [])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)).map(i => i.url).filter(Boolean); }
 function productVariants(product) { return [...(product.product_variants || [])].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)); }
@@ -35,6 +45,8 @@ function renderBrand() {
   const logo = $('#publicBrandLogo');
   const name = settings.brand_name || cfg.BRAND_NAME || 'MAOS';
   if (logo) logo.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : `<span>${escapeHTML(name)}</span>`;
+  const loaderBrand = $('#loaderBrand');
+  if (loaderBrand) loaderBrand.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : `<span>${escapeHTML(name)}</span>`;
 }
 
 async function loadSettings() {
@@ -202,6 +214,7 @@ function toggleFilters(force=null) {
 
 async function loadProducts() {
   const status = $('#catalogStatus');
+  setCatalogLoading(true);
   status.textContent = 'Cargando catálogo...';
   try {
     const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
@@ -213,6 +226,8 @@ async function loadProducts() {
   } catch (err) {
     console.error(err);
     status.textContent = `Error al cargar catálogo: ${err.message || err}`;
+  } finally {
+    hideCatalogLoader();
   }
 }
 

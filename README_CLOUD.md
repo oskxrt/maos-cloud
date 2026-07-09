@@ -63,3 +63,11 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Los diálogos se cierran al hacer clic fuera del cuadro.
 - Se corrigió el recibo/PDF anti-edición para evitar textos encimados.
 - En móvil se centra el logo y los filtros/search quedan contraídos como en desktop.
+
+
+## v30
+
+- Animación de carga al abrir el catálogo público.
+- Botones con hover/press más pulidos.
+- Flechas del carrusel siempre visibles dentro de Vista rápida.
+- Pequeños efectos visuales en tarjetas y modal de Vista rápida.
