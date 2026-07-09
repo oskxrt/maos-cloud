@@ -212,7 +212,7 @@ async function loadWebOrders() {
   const { data, error } = await supabase.from('catalog_orders').select('*, catalog_order_items(*)').order('created_at', { ascending: false }).limit(80);
   if (error) return;
   webOrders = data || [];
-  $('#ordersTable').innerHTML = webOrders.map(order => `<tr><td>${new Date(order.created_at).toLocaleString('es-MX')}</td><td>${(order.catalog_order_items || []).map(item => `<strong>${escapeHTML(item.product_name)}</strong><br><span class="muted">${escapeHTML(item.variant || 'Sin variante')} · x${item.qty}</span>`).join('<hr>')}</td><td>${money(order.total_reference)}</td><td><span class="badge">${escapeHTML(order.status || 'Nuevo')}</span></td><td><button class="ghost small" data-convert-web-order="${order.id}">Pasar a pedido</button></td></tr>`).join('') || '<tr><td colspan="5">Sin pedidos web todavía.</td></tr>';
+  $('#ordersTable').innerHTML = webOrders.map(order => `<tr><td>${new Date(order.created_at).toLocaleString('es-MX')}</td><td>${(order.catalog_order_items || []).map(item => `<strong>${escapeHTML(item.product_name)}</strong><br><span class="muted">${escapeHTML(item.variant || 'Sin variante')} · x${item.qty}</span>`).join('<hr>')}</td><td>${money(order.total_reference)}</td><td><span class="badge">${escapeHTML(order.status || 'Nuevo')}</span></td><td><div class="row-actions"><button class="ghost small" data-convert-web-order="${order.id}">Pasar a pedido</button><button class="danger small" data-delete-web-order="${order.id}">Eliminar</button></div></td></tr>`).join('') || '<tr><td colspan="5">Sin pedidos web todavía.</td></tr>';
 }
 
 function calcOrder(order) {
@@ -238,7 +238,7 @@ async function loadAdminOrders() {
 function renderAdminOrdersTable() {
   const rows = adminOrders.map(order => {
     const totals = calcOrder(order);
-    return `<tr><td><strong>${escapeHTML(order.folio)}</strong><br><span class="muted">${order.order_date || '—'} ${order.order_time || ''}</span></td><td>${escapeHTML(order.customer_name || 'Sin cliente')}<br><span class="muted">${escapeHTML(order.customer_phone || '')}</span></td><td><span class="badge">${escapeHTML(order.status || '—')}</span></td><td>${money(totals.total)}</td><td>${money(totals.paid)}</td><td><strong>${money(totals.balance)}</strong></td><td><div class="row-actions"><button class="ghost small" data-receipt="${order.id}">Recibo</button><button class="ghost small" data-whatsapp-receipt="${order.id}">WhatsApp</button><button class="ghost small" data-edit-order="${order.id}">Editar</button></div></td></tr>`;
+    return `<tr><td><strong>${escapeHTML(order.folio)}</strong><br><span class="muted">${order.order_date || '—'} ${order.order_time || ''}</span></td><td>${escapeHTML(order.customer_name || 'Sin cliente')}<br><span class="muted">${escapeHTML(order.customer_phone || '')}</span></td><td><span class="badge">${escapeHTML(order.status || '—')}</span></td><td>${money(totals.total)}</td><td>${money(totals.paid)}</td><td><strong>${money(totals.balance)}</strong></td><td><div class="row-actions"><button class="ghost small" data-receipt="${order.id}">Recibo</button><button class="ghost small" data-whatsapp-receipt="${order.id}">WhatsApp</button><button class="ghost small" data-edit-order="${order.id}">Editar</button><button class="danger small" data-delete-order="${order.id}">Eliminar</button></div></td></tr>`;
   }).join('') || '<tr><td colspan="7">Sin pedidos todavía.</td></tr>';
   $('#adminOrdersTable').innerHTML = rows;
 }
@@ -598,6 +598,29 @@ async function convertWebOrder(webOrderId) {
 }
 function editOrder(id) { const order = adminOrders.find(o => o.id === id); if (order) openOrderDialog(order); }
 
+async function deleteOrder(id) {
+  const order = adminOrders.find(o => o.id === id);
+  if (!order) return;
+  const ok = confirm(`¿Eliminar el pedido ${order.folio || ''}? Esta acción no se puede deshacer.`);
+  if (!ok) return;
+  const { error: itemsError } = await supabase.from('order_items').delete().eq('order_id', id);
+  if (itemsError) { alert(itemsError.message); return; }
+  const { error: paymentsError } = await supabase.from('order_payments').delete().eq('order_id', id);
+  if (paymentsError) { alert(paymentsError.message); return; }
+  const { error } = await supabase.from('orders').delete().eq('id', id);
+  if (error) { alert(error.message); return; }
+  await Promise.all([loadAdminOrders(), loadCustomers()]);
+}
+
+async function deleteWebOrder(id) {
+  const ok = confirm('¿Eliminar este pedido web del catálogo? Esta acción no se puede deshacer.');
+  if (!ok) return;
+  await supabase.from('catalog_order_items').delete().eq('order_id', id);
+  const { error } = await supabase.from('catalog_orders').delete().eq('id', id);
+  if (error) { alert(error.message); return; }
+  await loadWebOrders();
+}
+
 function normalizeWhatsapp(value) {
   let digits = String(value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -766,6 +789,10 @@ document.addEventListener('click', (event) => {
   if (clientWaId) whatsappClient(clientWaId);
   const convert = event.target.closest('[data-convert-web-order]')?.dataset.convertWebOrder;
   if (convert) convertWebOrder(convert);
+  const deleteOrderId = event.target.closest('[data-delete-order]')?.dataset.deleteOrder;
+  if (deleteOrderId) deleteOrder(deleteOrderId);
+  const deleteWebOrderId = event.target.closest('[data-delete-web-order]')?.dataset.deleteWebOrder;
+  if (deleteWebOrderId) deleteWebOrder(deleteWebOrderId);
 });
 
 supabase.auth.onAuthStateChange((_event, session) => { if (!session) showLogin(); });

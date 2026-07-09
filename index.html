@@ -6,69 +6,62 @@
   <title>MAOS — Disponibles</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="catalog-page">
-  <div class="catalog-announcement">
-    <span>NOVEDADES STREETWEAR DISPONIBLES · PEDIDO DIRECTO POR WHATSAPP</span>
-    <a id="shopWhatsappTop" target="_blank" rel="noopener">WHATSAPP TIENDA</a>
+<body class="catalog-page stussy-minimal">
+  <div class="catalog-announcement minimal-announcement">
+    <span>PEDIDO DIRECTO POR WHATSAPP · CATÁLOGO PÚBLICO MAOS</span>
+    <a id="shopWhatsappTop" target="_blank" rel="noopener">WHATSAPP</a>
   </div>
 
-  <div class="catalog-layout-shell">
-    <aside class="catalog-sidebar-nav">
-      <a class="catalog-brand-large" href="/">
-        <div class="catalog-brand-logo" id="publicBrandLogo">MAOS</div>
-        <div class="catalog-brand-wordmark" id="publicBrandWordmark">MAOS</div>
+  <div class="catalog-layout-shell minimal-layout-shell">
+    <aside class="catalog-sidebar-nav minimal-sidebar">
+      <a class="catalog-brand-large minimal-brand" href="index.html">
+        <div class="catalog-brand-logo minimal-logo" id="publicBrandLogo">MAOS</div>
       </a>
 
-      <nav class="catalog-side-links">
-        <button class="catalog-side-link active" data-side-category="">NOVEDADES</button>
+      <nav class="catalog-side-links minimal-links">
+        <button class="catalog-side-link active" data-side-category="">SHOP ALL</button>
         <div id="categoryNav"></div>
       </nav>
 
-      <div class="catalog-side-footer">
-        <p>Catálogo público</p>
-        <small>Streetwear select · pedidos por WhatsApp</small>
+      <div class="catalog-side-footer minimal-footer">
+        <small>© MAOS</small>
       </div>
     </aside>
 
-    <main class="catalog-main-wrap">
-      <header class="catalog-topbar">
-        <div class="catalog-topbar-left">
-          <strong>FILTER</strong>
-          <span id="activeCategoryLabel">TODOS LOS PRODUCTOS</span>
+    <main class="catalog-main-wrap minimal-main">
+      <header class="catalog-topbar minimal-topbar">
+        <div class="catalog-topbar-left minimal-topbar-left">
+          <button class="text-control" type="button" id="toggleFiltersBtn">FILTER</button>
+          <span id="activeCategoryLabel">SHOP ALL</span>
         </div>
-        <div class="catalog-topbar-right toolbar">
-          <input id="searchInput" type="search" placeholder="Buscar producto, talla, color..." />
+        <div class="catalog-topbar-right minimal-topbar-right">
+          <input id="searchInput" type="search" placeholder="SEARCH" />
           <select id="categoryFilter"><option value="">Todas</option></select>
-          <a class="button ghost" href="admin.html">Panel</a>
-          <button class="button primary" type="button" id="scrollCartBtn">Carrito</button>
+          <select id="sizeFilter"><option value="">Talla</option></select>
+          <select id="colorFilter"><option value="">Color</option></select>
+          <a class="text-link" href="admin.html">PANEL</a>
+          <button class="text-link text-link-button" type="button" id="scrollCartBtn">BAG</button>
         </div>
       </header>
 
-      <section id="cart" class="cart catalog-cart"></section>
+      <section id="cart" class="cart catalog-cart minimal-cart"></section>
 
-      <section class="catalog-section">
-        <div class="catalog-section-head">
-          <div>
-            <span class="section-kicker">MAOS SELECT</span>
-            <h2>Novedades</h2>
-          </div>
-          <p class="muted">Lo más nuevo y destacado del catálogo.</p>
-        </div>
-        <section id="featuredGrid" class="catalog-grid featured-grid"></section>
-      </section>
-
-      <section class="catalog-section">
-        <div class="catalog-section-head">
-          <div>
-            <span class="section-kicker">CATÁLOGO</span>
-            <h2 id="catalogTitle">Todos los productos</h2>
-          </div>
-          <p id="catalogStatus" class="status"></p>
-        </div>
-        <section id="catalogGrid" class="catalog-grid"></section>
+      <section class="catalog-section minimal-section">
+        <section id="catalogGrid" class="catalog-grid minimal-catalog-grid"></section>
+        <p id="catalogStatus" class="status minimal-status"></p>
       </section>
     </main>
   </div>
+
+  <dialog id="quickViewModal" class="modal quickview-modal">
+    <div class="modal-card quickview-card">
+      <div class="modal-head">
+        <h3>Vista rápida</h3>
+        <button class="icon-btn" id="closeQuickView" type="button">×</button>
+      </div>
+      <div id="quickViewContent"></div>
+    </div>
+  </dialog>
 
   <script src="cloud-config.js"></script>
   <script type="module" src="public-catalog.js"></script>
