@@ -15,6 +15,18 @@ let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', logo_url: '', store_whats
 const $ = (s, p=document) => p.querySelector(s);
 const $$ = (s, p=document) => [...p.querySelectorAll(s)];
 
+let quickViewScrollY = 0;
+function lockPageScroll() {
+  quickViewScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.classList.add('quickview-scroll-lock');
+  document.body.style.top = `-${quickViewScrollY}px`;
+}
+function unlockPageScroll() {
+  document.body.classList.remove('quickview-scroll-lock');
+  document.body.style.top = '';
+  window.scrollTo(0, quickViewScrollY || 0);
+}
+
 function setCatalogLoading(isLoading) {
   const loader = $('#catalogLoader');
   document.body.classList.toggle('catalog-is-loading', isLoading);
@@ -204,7 +216,10 @@ function openQuickView(productId) {
   const modal = $('#quickViewModal');
   if (!product || !modal) return;
   $('#quickViewContent').innerHTML = quickViewTemplate(product);
+  lockPageScroll();
   modal.showModal();
+  const scrollBox = modal.querySelector('.quickview-card');
+  if (scrollBox) scrollBox.scrollTop = 0;
 }
 
 function toggleFilters(force=null) {
@@ -260,9 +275,14 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-$$('dialog').forEach(dialog => dialog.addEventListener('click', (event) => {
-  if (event.target === dialog) dialog.close();
-}));
+$$('dialog').forEach(dialog => {
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => {
+    if (dialog.id === 'quickViewModal') unlockPageScroll();
+  });
+});
 
 $('#searchInput').addEventListener('input', render);
 $('#categoryFilter').addEventListener('change', e => { selectedCategory = e.target.value; render(); });

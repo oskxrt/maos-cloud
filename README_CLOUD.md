@@ -71,3 +71,18 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Botones con hover/press más pulidos.
 - Flechas del carrusel siempre visibles dentro de Vista rápida.
 - Pequeños efectos visuales en tarjetas y modal de Vista rápida.
+
+
+## v31
+
+- Mejoras visuales en Vista rápida: más aire interno, mejor distribución y botones menos pegados a los bordes.
+- Micro-animaciones en botones y controles sin usar degradados.
+- Flechas del carrusel más visibles y con mejor efecto hover/click.
+- Se removió el efecto de brillo con degradado para mantener el look minimalista limpio.
+
+
+## v32
+
+- Corrección de Vista rápida en móvil: ahora el modal tiene scroll propio y se bloquea el scroll de la página del fondo.
+- El encabezado de la Vista rápida se mantiene visible al hacer scroll en móvil.
+- Ajustes de altura y padding para que se vea toda la información del producto en celular.
