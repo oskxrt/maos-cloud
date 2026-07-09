@@ -139,7 +139,10 @@ async function loadProducts() {
   products = data || [];
   $('#productsTable').innerHTML = products.map(product => {
     const stock = productStock(product);
-    return `<tr><td><strong>${escapeHTML(product.name)}</strong><br><span class="muted">${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(product.category || 'Sin categoría')} · Stock ${stock}</span></td><td>${money(product.price)}</td><td><span class="badge">${escapeHTML(product.status || '—')}</span></td><td><button class="ghost small" data-edit="${product.id}">Editar</button></td></tr>`;
+    const image = [...(product.product_images || [])].sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0))[0]?.url || '';
+    const status = product.status || '—';
+    const variants = productVariants(product).length;
+    return `<tr class="admin-product-row"><td><div class="admin-product-cell"><div class="admin-thumb">${image ? `<img src="${image}" alt="${escapeHTML(product.name)}">` : `<span>${escapeHTML((product.name || 'P').slice(0,1).toUpperCase())}</span>`}</div><div><strong>${escapeHTML(product.name)}</strong><br><span class="muted">${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(product.category || 'Sin categoría')}</span><div class="mini-meta"><span>Stock ${stock}</span><span>${variants} variantes</span></div></div></div></td><td><strong>${money(product.price)}</strong><br><span class="muted">Costo ${money(product.cost || 0)}</span></td><td><span class="badge status-${normalize(status)}">${escapeHTML(status)}</span></td><td><button class="ghost small admin-action-btn" data-edit="${product.id}">Editar</button></td></tr>`;
   }).join('') || '<tr><td colspan="4">Sin productos todavía.</td></tr>';
 }
 async function uploadImages(productId, files) {
@@ -286,11 +289,13 @@ function renderClientsTable() {
   table.innerHTML = filtered.length ? filtered.map(customer => {
     const stats = customerStats(customer);
     const phone = normalizeWhatsapp(customer.phone || '');
-    return `<tr>
-      <td><strong>${escapeHTML(customer.name || 'Sin nombre')}</strong><br><span class="muted">${escapeHTML(customer.phone || 'Sin teléfono')}${customer.social ? ` · ${escapeHTML(customer.social)}` : ''}</span>${customer.notes ? `<br><span class="muted">${escapeHTML(customer.notes)}</span>` : ''}</td>
-      <td>${stats.orders}<br><span class="muted">Último: ${stats.lastDate || '—'}</span></td>
+    const initial = escapeHTML((customer.name || 'C').slice(0,1).toUpperCase());
+    const contactLine = [customer.phone || 'Sin teléfono', customer.social].filter(Boolean).join(' · ');
+    return `<tr class="admin-client-row">
+      <td><div class="admin-client-cell"><div class="admin-avatar">${initial}</div><div><strong>${escapeHTML(customer.name || 'Sin nombre')}</strong><br><span class="muted">${escapeHTML(contactLine)}</span>${customer.notes ? `<br><span class="muted client-note">${escapeHTML(customer.notes)}</span>` : ''}</div></div></td>
+      <td><strong>${stats.orders}</strong><br><span class="muted">Último: ${stats.lastDate || '—'}</span></td>
       <td><strong>${money(stats.balance)}</strong><br><span class="muted">Vendido: ${money(stats.total)}</span></td>
-      <td><div class="row-actions"><button class="ghost small" data-edit-client="${customer.id}">Editar</button><button class="ghost small" data-client-order="${customer.id}">Pedido</button>${phone ? `<button class="ghost small" data-client-wa="${customer.id}">WhatsApp</button>` : ''}</div></td>
+      <td><div class="row-actions"><button class="ghost small admin-action-btn" data-edit-client="${customer.id}">Editar</button><button class="ghost small admin-action-btn" data-client-order="${customer.id}">Pedido</button>${phone ? `<button class="ghost small admin-action-btn" data-client-wa="${customer.id}">WhatsApp</button>` : ''}</div></td>
     </tr>`;
   }).join('') : '<tr><td colspan="4">Sin clientes registrados.</td></tr>';
 }

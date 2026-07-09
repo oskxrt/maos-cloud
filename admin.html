@@ -6,7 +6,7 @@
   <title>MAOS — Panel</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="admin-page">
   <section id="loginView" class="login-shell">
     <form id="loginForm" class="login-card">
       <div class="brand">
@@ -61,7 +61,7 @@
         <div class="dashboard-widgets" id="dashboardWidgets"></div>
       </section>
 
-      <section id="productsTab" class="tab hidden">
+      <section id="productsTab" class="tab hidden admin-products-ui">
         <div class="hero">
           <div>
             <span class="kicker">ADMIN</span>
@@ -71,7 +71,7 @@
           <button class="ghost" id="refreshBtn">Actualizar</button>
         </div>
         <div class="admin-grid">
-          <form id="productForm" class="panel">
+          <form id="productForm" class="panel admin-form-panel product-form-panel">
             <h3 id="formTitle">Nuevo producto</h3>
             <input id="productId" type="hidden">
             <div class="form-grid">
@@ -97,10 +97,10 @@
             <p id="productStatusText" class="status"></p>
           </form>
 
-          <section class="panel">
-            <h3>Productos guardados</h3>
-            <div style="overflow:auto; max-height:720px;">
-              <table class="table">
+          <section class="panel admin-list-panel product-list-panel">
+            <div class="panel-title-row"><div><h3>Productos guardados</h3><p class="muted">Edita rápido precio, estado, fotos y variantes.</p></div></div>
+            <div class="admin-table-shell">
+              <table class="table admin-products-table">
                 <thead><tr><th>Producto</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
                 <tbody id="productsTable"></tbody>
               </table>
@@ -110,7 +110,7 @@
       </section>
 
 
-      <section id="clientsTab" class="tab hidden">
+      <section id="clientsTab" class="tab hidden admin-clients-ui">
         <div class="hero">
           <div>
             <span class="kicker">CLIENTES</span>
@@ -120,7 +120,7 @@
           <div class="toolbar"><button class="ghost" id="clearClientBtn">Nuevo cliente</button><button class="ghost" id="refreshClientsBtn">Actualizar</button></div>
         </div>
         <div class="admin-grid clients-grid">
-          <form id="clientForm" class="panel">
+          <form id="clientForm" class="panel admin-form-panel client-form-panel">
             <h3 id="clientFormTitle">Nuevo cliente</h3>
             <input id="clientId" type="hidden">
             <div class="form-grid">
@@ -139,13 +139,13 @@
             <p id="clientStatusText" class="status"></p>
           </form>
 
-          <section class="panel">
-            <div class="panel-head-inline">
-              <h3>Clientes guardados</h3>
+          <section class="panel admin-list-panel client-list-panel">
+            <div class="panel-head-inline client-list-head">
+              <div><h3>Clientes guardados</h3><p class="muted">Consulta saldos, pedidos y contacto rápido.</p></div>
               <input id="clientSearch" type="search" placeholder="Buscar cliente, teléfono o red...">
             </div>
-            <div style="overflow:auto; max-height:720px;">
-              <table class="table">
+            <div class="admin-table-shell">
+              <table class="table admin-clients-table">
                 <thead><tr><th>Cliente</th><th>Pedidos</th><th>Saldo</th><th></th></tr></thead>
                 <tbody id="clientsTable"></tbody>
               </table>

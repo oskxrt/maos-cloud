@@ -86,3 +86,11 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Corrección de Vista rápida en móvil: ahora el modal tiene scroll propio y se bloquea el scroll de la página del fondo.
 - El encabezado de la Vista rápida se mantiene visible al hacer scroll en móvil.
 - Ajustes de altura y padding para que se vea toda la información del producto en celular.
+
+
+## v33
+
+- Rediseño visual de las secciones **Productos** y **Clientes** del panel admin.
+- Tablas convertidas en filas tipo card con miniaturas, avatares, chips y micro-animaciones.
+- Formularios con mejor espaciado, foco visual y inputs más limpios.
+- Mejoras responsive para móvil/tablet.
