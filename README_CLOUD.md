@@ -100,3 +100,11 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - La sección **Clientes** ahora queda como lista limpia; el formulario se abre en ventana modal al presionar **Nuevo cliente** o **Editar**.
 - Productos ahora permite agregar **URLs externas de imágenes** además de subir archivos. Pega una URL por línea en el campo "URLs de imágenes".
 - Al guardar un producto se sincronizan las URLs pegadas y las fotos subidas en el catálogo.
+
+## v35
+
+- La sección **Productos** ahora funciona como Clientes: lista limpia y formulario solo en ventana modal.
+- Botón **Nuevo producto** abre una ventana para registrar productos.
+- Botón **Editar** abre la misma ventana con los datos cargados.
+- Agregado buscador de productos por nombre, SKU, categoría, proveedor o estado.
+- Se mantienen URLs de imágenes externas y subida de archivos.

@@ -2350,3 +2350,91 @@ body.quickview-scroll-lock {
   .client-modal-actions button { width: 100%; }
   .clients-list-only-ui .admin-clients-table { min-width: 760px; }
 }
+
+/* v35 products list-only + modal, matching clients flow */
+.products-list-only-ui .hero {
+  align-items: end;
+}
+.products-list-only-ui .products-only-panel {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 32px;
+}
+.products-list-only-ui .products-table-shell {
+  max-height: none;
+  overflow: auto;
+}
+.products-list-only-ui .admin-products-table {
+  width: 100%;
+  border-spacing: 0 12px;
+}
+.products-list-only-ui .admin-product-row td {
+  padding: 18px 16px;
+}
+.product-list-head {
+  align-items: center;
+}
+.product-list-head input,
+#productSearch {
+  width: min(360px, 100%);
+  min-height: 48px;
+  border: 1px solid var(--admin-border, #e4e8ef);
+  border-radius: 16px;
+  background: #fff;
+  padding: 0 16px;
+  font-weight: 750;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+#productSearch:focus {
+  outline: none;
+  border-color: #111827;
+  box-shadow: 0 0 0 4px rgba(17,24,39,.07);
+}
+.product-modal {
+  width: min(920px, calc(100vw - 24px));
+}
+.product-modal-card {
+  width: 100%;
+  max-height: min(88vh, 980px);
+  overflow: auto;
+  padding: 28px;
+}
+.product-modal-card .modal-head {
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--admin-border, #e4e8ef);
+}
+.product-modal-card .modal-head h3 {
+  margin: 4px 0 0;
+  font-size: 2.1rem;
+  letter-spacing: -.055em;
+}
+.product-modal-card .form-grid {
+  margin-top: 20px;
+}
+.product-modal-actions {
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--admin-border, #e4e8ef);
+  padding-top: 18px !important;
+}
+.products-list-only-ui .admin-product-cell {
+  min-width: 320px;
+}
+.products-list-only-ui .admin-thumb {
+  width: 66px;
+  height: 66px;
+  border-radius: 18px;
+}
+.products-list-only-ui .mini-meta span {
+  background: #f7f8fb;
+}
+@media (max-width: 720px) {
+  .products-list-only-ui .products-only-panel,
+  .product-modal-card { padding: 18px; border-radius: 24px; }
+  .product-modal-actions { flex-direction: column; align-items: stretch; }
+  .product-modal-actions button { width: 100%; }
+  .products-list-only-ui .admin-products-table { min-width: 760px; }
+  .product-list-head { flex-direction: column; align-items: stretch; }
+  #productSearch { width: 100%; }
+}

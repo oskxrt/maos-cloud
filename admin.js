@@ -142,17 +142,23 @@ function renderPreview() {
   const imgs = [...urls, ...fileUrls];
   $('#imagePreview').innerHTML = imgs.map(src => `<img src="${escapeAttr(src)}" alt="preview">`).join('') || '<span class="muted">Sin fotos</span>';
 }
-async function loadProducts() {
-  const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
-  if (error) { setStatus('#productStatusText', `Error: ${error.message}`); return; }
-  products = data || [];
-  $('#productsTable').innerHTML = products.map(product => {
+function renderProductsTable() {
+  const query = normalize($('#productSearch')?.value || '');
+  const filtered = products.filter(product => !query || normalize([product.name, product.sku, product.category, product.supplier, product.status].join(' ')).includes(query));
+  $('#productsTable').innerHTML = filtered.map(product => {
     const stock = productStock(product);
     const image = [...(product.product_images || [])].sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0))[0]?.url || '';
     const status = product.status || '—';
     const variants = productVariants(product).length;
-    return `<tr class="admin-product-row"><td><div class="admin-product-cell"><div class="admin-thumb">${image ? `<img src="${image}" alt="${escapeHTML(product.name)}">` : `<span>${escapeHTML((product.name || 'P').slice(0,1).toUpperCase())}</span>`}</div><div><strong>${escapeHTML(product.name)}</strong><br><span class="muted">${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(product.category || 'Sin categoría')}</span><div class="mini-meta"><span>Stock ${stock}</span><span>${variants} variantes</span></div></div></div></td><td><strong>${money(product.price)}</strong><br><span class="muted">Costo ${money(product.cost || 0)}</span></td><td><span class="badge status-${normalize(status)}">${escapeHTML(status)}</span></td><td><button class="ghost small admin-action-btn" data-edit="${product.id}">Editar</button></td></tr>`;
+    return `<tr class="admin-product-row"><td><div class="admin-product-cell"><div class="admin-thumb">${image ? `<img src="${image}" alt="${escapeHTML(product.name)}">` : `<span>${escapeHTML((product.name || 'P').slice(0,1).toUpperCase())}</span>`}</div><div><strong>${escapeHTML(product.name)}</strong><br><span class="muted">${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(product.category || 'Sin categoría')}</span><div class="mini-meta"><span>Stock ${stock}</span><span>${variants} variantes</span></div></div></div></td><td><strong>${money(product.price)}</strong><br><span class="muted">Costo ${money(product.cost || 0)}</span></td><td><span class="badge status-${normalize(status)}">${escapeHTML(status)}</span></td><td><div class="row-actions"><button class="ghost small admin-action-btn" data-edit="${product.id}">Editar</button></div></td></tr>`;
   }).join('') || '<tr><td colspan="4">Sin productos todavía.</td></tr>';
+  setStatus('#productListStatus', filtered.length ? `${filtered.length} producto${filtered.length === 1 ? '' : 's'} visible${filtered.length === 1 ? '' : 's'}.` : 'Sin resultados.');
+}
+async function loadProducts() {
+  const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
+  if (error) { setStatus('#productListStatus', `Error: ${error.message}`); return; }
+  products = data || [];
+  renderProductsTable();
 }
 async function uploadImages(productId, files, startSort = 0) {
   const rows = [];
@@ -196,10 +202,21 @@ async function saveProduct(event) {
   if (variants.length) await supabase.from('product_variants').insert(variants);
   await syncProductImages(productId);
   await loadProducts();
-  clearForm();
   renderDashboard();
   setStatus('#productStatusText', 'Producto guardado.');
+  setTimeout(() => {
+    $('#productDialog')?.close();
+    clearForm();
+  }, 250);
 }
+function openProductDialog() {
+  clearForm();
+  activateTab('products');
+  const dialog = $('#productDialog');
+  if (dialog && !dialog.open) dialog.showModal();
+  setTimeout(() => $('#productName')?.focus(), 60);
+}
+
 function editProduct(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
@@ -218,14 +235,20 @@ function editProduct(id) {
   if ($('#productImageUrls')) $('#productImageUrls').value = currentImages.map(img => img.url).filter(Boolean).join('\n');
   selectedFiles = [];
   renderPreview();
+  setStatus('#productStatusText', '');
   activateTab('products');
+  const dialog = $('#productDialog');
+  if (dialog && !dialog.open) dialog.showModal();
+  setTimeout(() => $('#productName')?.focus(), 60);
 }
 async function hideProduct() {
   const id = $('#productId').value;
   if (!id) return;
   await supabase.from('products').update({ status: 'Oculto', updated_at: new Date().toISOString() }).eq('id', id);
   clearForm();
+  $('#productDialog')?.close();
   await loadProducts();
+  renderDashboard();
 }
 
 async function loadWebOrders() {
@@ -870,6 +893,8 @@ $('#logoutBtn').addEventListener('click', async () => { await supabase.auth.sign
 $('#productForm').addEventListener('submit', saveProduct);
 $('#productImages').addEventListener('change', (event) => { selectedFiles = [...(event.target.files || [])]; renderPreview(); });
 $('#productImageUrls')?.addEventListener('input', renderPreview);
+$('#newProductBtn')?.addEventListener('click', openProductDialog);
+$('#productSearch')?.addEventListener('input', renderProductsTable);
 $('#clearProductBtn').addEventListener('click', clearForm);
 $('#hideProductBtn').addEventListener('click', hideProduct);
 $('#refreshBtn').addEventListener('click', loadProducts);

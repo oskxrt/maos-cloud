@@ -61,56 +61,28 @@
         <div class="dashboard-widgets" id="dashboardWidgets"></div>
       </section>
 
-      <section id="productsTab" class="tab hidden admin-products-ui">
-        <div class="hero">
+      <section id="productsTab" class="tab hidden admin-products-ui products-list-only-ui">
+        <div class="hero products-hero-clean">
           <div>
             <span class="kicker">ADMIN</span>
             <h2>Productos</h2>
-            <p class="muted">Crea productos, variantes, stock y fotos. Todo se refleja en el catálogo público.</p>
+            <p class="muted">Lista limpia de productos. Crea o edita solo cuando lo necesites.</p>
           </div>
-          <button class="ghost" id="refreshBtn">Actualizar</button>
+          <div class="toolbar"><button class="primary" id="newProductBtn">Nuevo producto</button><button class="ghost" id="refreshBtn">Actualizar</button></div>
         </div>
-        <div class="admin-grid">
-          <form id="productForm" class="panel admin-form-panel product-form-panel">
-            <h3 id="formTitle">Nuevo producto</h3>
-            <input id="productId" type="hidden">
-            <div class="form-grid">
-              <label>Nombre<input id="productName" required placeholder="Adidas Originals TrackTop Dama"></label>
-              <label>SKU<input id="productSku" placeholder="MAOS-CHA-0001"></label>
-              <label>Categoría<input id="productCategory" placeholder="Chamarra, Tee, Gorra..."></label>
-              <label>Proveedor<input id="productSupplier" placeholder="Jane, TOM..."></label>
-              <label>Costo<input id="productCost" type="number" min="0" step="0.01" value="0"></label>
-              <label>Precio<input id="productPrice" type="number" min="0" step="0.01" value="0"></label>
-              <label>Estado<select id="productStatus"><option>Disponible</option><option>Oculto</option><option>Agotado</option></select></label>
-              <label>Fotos<input id="productImages" type="file" accept="image/*" multiple></label>
-              <label class="wide product-url-field">URLs de imágenes
-                <textarea id="productImageUrls" placeholder="https://ejemplo.com/foto-1.jpg&#10;https://ejemplo.com/foto-2.jpg"></textarea>
-                <span class="field-hint">Puedes pegar URLs externas para ahorrar espacio. Una URL por línea. Si subes archivos, también se agregan al catálogo.</span>
-              </label>
-              <label class="wide">Descripción<textarea id="productDescription" placeholder="Detalles visibles para cliente"></textarea></label>
-              <label class="wide">Variantes / stock
-                <textarea id="productVariants" placeholder="Una por línea: S / Negro / 1&#10;M / Negro / 1&#10;XL / Negro / 1"></textarea>
-              </label>
-              <div class="wide preview-list" id="imagePreview"></div>
-            </div>
-            <div class="toolbar" style="margin-top:16px;">
-              <button class="primary" type="submit">Guardar producto</button>
-              <button class="ghost" type="button" id="clearProductBtn">Limpiar</button>
-              <button class="danger" type="button" id="hideProductBtn">Ocultar</button>
-            </div>
-            <p id="productStatusText" class="status"></p>
-          </form>
-
-          <section class="panel admin-list-panel product-list-panel">
-            <div class="panel-title-row"><div><h3>Productos guardados</h3><p class="muted">Edita rápido precio, estado, fotos y variantes.</p></div></div>
-            <div class="admin-table-shell">
-              <table class="table admin-products-table">
-                <thead><tr><th>Producto</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="productsTable"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
+        <section class="panel admin-list-panel product-list-panel products-only-panel">
+          <div class="panel-head-inline product-list-head">
+            <div><h3>Productos guardados</h3><p class="muted">Busca, edita estado, variantes, fotos o precios desde una ventana limpia.</p></div>
+            <input id="productSearch" type="search" placeholder="Buscar producto, SKU, categoría...">
+          </div>
+          <div class="admin-table-shell products-table-shell">
+            <table class="table admin-products-table">
+              <thead><tr><th>Producto</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="productsTable"></tbody>
+            </table>
+          </div>
+          <p id="productListStatus" class="status"></p>
+        </section>
       </section>
 
 
@@ -203,6 +175,38 @@
     </main>
   </section>
 
+
+  <dialog id="productDialog" class="modal product-modal">
+    <form id="productForm" class="modal-card product-modal-card admin-form-panel product-form-panel">
+      <div class="modal-head"><div><span class="kicker">PRODUCTO</span><h3 id="formTitle">Nuevo producto</h3></div><button type="button" class="icon-btn" data-close="productDialog">×</button></div>
+      <input id="productId" type="hidden">
+      <div class="form-grid">
+        <label>Nombre<input id="productName" required placeholder="Adidas Originals TrackTop Dama"></label>
+        <label>SKU<input id="productSku" placeholder="MAOS-CHA-0001"></label>
+        <label>Categoría<input id="productCategory" placeholder="Chamarra, Tee, Gorra..."></label>
+        <label>Proveedor<input id="productSupplier" placeholder="Jane, TOM..."></label>
+        <label>Costo<input id="productCost" type="number" min="0" step="0.01" value="0"></label>
+        <label>Precio<input id="productPrice" type="number" min="0" step="0.01" value="0"></label>
+        <label>Estado<select id="productStatus"><option>Disponible</option><option>Oculto</option><option>Agotado</option></select></label>
+        <label>Fotos<input id="productImages" type="file" accept="image/*" multiple></label>
+        <label class="wide product-url-field">URLs de imágenes
+          <textarea id="productImageUrls" placeholder="https://ejemplo.com/foto-1.jpg&#10;https://ejemplo.com/foto-2.jpg"></textarea>
+          <span class="field-hint">Una URL por línea. Puedes combinar URLs externas con fotos subidas.</span>
+        </label>
+        <label class="wide">Descripción<textarea id="productDescription" placeholder="Detalles visibles para cliente"></textarea></label>
+        <label class="wide">Variantes / stock
+          <textarea id="productVariants" placeholder="Una por línea: S / Negro / 1&#10;M / Negro / 1&#10;XL / Negro / 1"></textarea>
+        </label>
+        <div class="wide preview-list" id="imagePreview"></div>
+      </div>
+      <div class="toolbar product-modal-actions" style="margin-top:16px;">
+        <button class="primary" type="submit">Guardar producto</button>
+        <button class="ghost" type="button" id="clearProductBtn">Limpiar</button>
+        <button class="danger" type="button" id="hideProductBtn">Ocultar</button>
+      </div>
+      <p id="productStatusText" class="status"></p>
+    </form>
+  </dialog>
 
   <dialog id="clientDialog" class="modal client-modal">
     <form id="clientForm" class="modal-card client-modal-card admin-form-panel client-form-panel">
