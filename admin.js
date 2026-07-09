@@ -16,6 +16,7 @@ const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice
 let products = [];
 let webOrders = [];
 let adminOrders = [];
+let customers = [];
 let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451', logo_url: '' };
 let currentImages = [];
 let selectedFiles = [];
@@ -80,7 +81,7 @@ async function showAdmin() {
   $('#loginView').classList.add('hidden');
   $('#adminView').classList.remove('hidden');
   await loadSettings();
-  await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders()]);
+  await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]);
   renderDashboard();
 }
 
@@ -241,6 +242,152 @@ function renderAdminOrdersTable() {
   }).join('') || '<tr><td colspan="7">Sin pedidos todavía.</td></tr>';
   $('#adminOrdersTable').innerHTML = rows;
 }
+
+function customerKeyFrom(name = '', phone = '') {
+  const normalizedPhone = normalizeWhatsapp(phone);
+  if (normalizedPhone) return `phone:${normalizedPhone}`;
+  return `name:${normalize(name)}`;
+}
+function matchingOrdersForCustomer(customer) {
+  const key = customerKeyFrom(customer.name, customer.phone);
+  return adminOrders.filter(order => customerKeyFrom(order.customer_name, order.customer_phone) === key);
+}
+function customerStats(customer) {
+  const orders = matchingOrdersForCustomer(customer).filter(order => order.status !== 'Cancelado');
+  return orders.reduce((acc, order) => {
+    const t = calcOrder(order);
+    acc.orders += 1;
+    acc.total += t.total;
+    acc.paid += t.paid;
+    acc.balance += t.balance;
+    acc.lastDate = !acc.lastDate || String(order.order_date || '') > acc.lastDate ? String(order.order_date || '') : acc.lastDate;
+    return acc;
+  }, { orders: 0, total: 0, paid: 0, balance: 0, lastDate: '' });
+}
+async function loadCustomers() {
+  const table = $('#clientsTable');
+  const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+  if (error) {
+    console.warn(error);
+    customers = [];
+    if (table) table.innerHTML = `<tr><td colspan="4">Falta ejecutar el schema de clientes: ${escapeHTML(error.message)}</td></tr>`;
+    return;
+  }
+  customers = data || [];
+  renderClientsTable();
+  renderDashboard();
+}
+function renderClientsTable() {
+  const table = $('#clientsTable');
+  if (!table) return;
+  const search = normalize($('#clientSearch')?.value || '');
+  const filtered = customers.filter(customer => !search || normalize([customer.name, customer.phone, customer.social, customer.email, customer.notes].join(' ')).includes(search));
+  table.innerHTML = filtered.length ? filtered.map(customer => {
+    const stats = customerStats(customer);
+    const phone = normalizeWhatsapp(customer.phone || '');
+    return `<tr>
+      <td><strong>${escapeHTML(customer.name || 'Sin nombre')}</strong><br><span class="muted">${escapeHTML(customer.phone || 'Sin teléfono')}${customer.social ? ` · ${escapeHTML(customer.social)}` : ''}</span>${customer.notes ? `<br><span class="muted">${escapeHTML(customer.notes)}</span>` : ''}</td>
+      <td>${stats.orders}<br><span class="muted">Último: ${stats.lastDate || '—'}</span></td>
+      <td><strong>${money(stats.balance)}</strong><br><span class="muted">Vendido: ${money(stats.total)}</span></td>
+      <td><div class="row-actions"><button class="ghost small" data-edit-client="${customer.id}">Editar</button><button class="ghost small" data-client-order="${customer.id}">Pedido</button>${phone ? `<button class="ghost small" data-client-wa="${customer.id}">WhatsApp</button>` : ''}</div></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4">Sin clientes registrados.</td></tr>';
+}
+function clearClientForm() {
+  $('#clientFormTitle').textContent = 'Nuevo cliente';
+  $('#clientId').value = '';
+  $('#clientName').value = '';
+  $('#clientPhone').value = '';
+  $('#clientSocial').value = '';
+  $('#clientEmail').value = '';
+  $('#clientAddress').value = '';
+  $('#clientNotes').value = '';
+  setStatus('#clientStatusText', '');
+}
+function editClient(id) {
+  const customer = customers.find(c => c.id === id);
+  if (!customer) return;
+  activateTab('clients');
+  $('#clientFormTitle').textContent = `Editar ${customer.name || 'cliente'}`;
+  $('#clientId').value = customer.id || '';
+  $('#clientName').value = customer.name || '';
+  $('#clientPhone').value = customer.phone || '';
+  $('#clientSocial').value = customer.social || '';
+  $('#clientEmail').value = customer.email || '';
+  $('#clientAddress').value = customer.address || '';
+  $('#clientNotes').value = customer.notes || '';
+}
+async function saveClient(event) {
+  event?.preventDefault?.();
+  const name = $('#clientName').value.trim();
+  if (!name) { setStatus('#clientStatusText', 'Escribe el nombre del cliente.'); return; }
+  const payload = {
+    name,
+    phone: $('#clientPhone').value.trim(),
+    phone_normalized: normalizeWhatsapp($('#clientPhone').value),
+    social: $('#clientSocial').value.trim(),
+    email: $('#clientEmail').value.trim(),
+    address: $('#clientAddress').value.trim(),
+    notes: $('#clientNotes').value.trim(),
+    updated_at: new Date().toISOString()
+  };
+  const id = $('#clientId').value;
+  setStatus('#clientStatusText', 'Guardando cliente...');
+  const result = id ? await supabase.from('customers').update(payload).eq('id', id) : await supabase.from('customers').insert(payload);
+  if (result.error) { setStatus('#clientStatusText', result.error.message); return; }
+  clearClientForm();
+  await loadCustomers();
+  setStatus('#clientStatusText', 'Cliente guardado.');
+}
+async function deleteClient() {
+  const id = $('#clientId')?.value;
+  if (!id) { clearClientForm(); return; }
+  if (!confirm('¿Borrar este cliente? Sus pedidos existentes no se borran.')) return;
+  const { error } = await supabase.from('customers').delete().eq('id', id);
+  if (error) { setStatus('#clientStatusText', error.message); return; }
+  clearClientForm();
+  await loadCustomers();
+}
+async function upsertCustomerFromOrderPayload(payload) {
+  const name = (payload.customer_name || '').trim();
+  const phone = (payload.customer_phone || '').trim();
+  if (!name && !phone) return;
+  const keyPhone = normalizeWhatsapp(phone);
+  try {
+    let existing = null;
+    if (keyPhone) {
+      const { data } = await supabase.from('customers').select('*').eq('phone_normalized', keyPhone).maybeSingle();
+      existing = data;
+    }
+    if (!existing && name) {
+      const { data } = await supabase.from('customers').select('*').eq('name', name).maybeSingle();
+      existing = data;
+    }
+    const data = { name: name || existing?.name || 'Cliente', phone, phone_normalized: keyPhone || null, social: payload.customer_social || '', updated_at: new Date().toISOString() };
+    if (existing?.id) await supabase.from('customers').update({ ...data, social: data.social || existing.social || '' }).eq('id', existing.id);
+    else await supabase.from('customers').insert(data);
+  } catch (error) { console.warn('No se pudo sincronizar cliente', error); }
+}
+function newOrderForClient(id) {
+  const customer = customers.find(c => c.id === id);
+  if (!customer) return;
+  activateTab('orders');
+  openOrderDialog();
+  $('#orderCustomerName').value = customer.name || '';
+  $('#orderCustomerPhone').value = customer.phone || '';
+  $('#orderCustomerSocial').value = customer.social || '';
+  $('#orderDelivery').value = customer.address || '';
+}
+function whatsappClient(id) {
+  const customer = customers.find(c => c.id === id);
+  if (!customer) return;
+  const phone = normalizeWhatsapp(customer.phone);
+  if (!phone) return;
+  const stats = customerStats(customer);
+  const lines = ['Hola, te escribimos de MAOS.', stats.balance > 0 ? `Saldo pendiente: ${money(stats.balance)}` : '', 'Quedamos atentos.'].filter(Boolean);
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank');
+}
+
 function renderDashboard() {
   if (!$('#dashboardStats')) return;
   const activeOrders = adminOrders.filter(order => order.status !== 'Cancelado');
@@ -262,6 +409,7 @@ function renderDashboard() {
     <article class="stat-card old-style-stat"><span>Saldo pendiente</span><strong>${money(totals.balance)}</strong><small>Clientes por cobrar</small></article>
     <article class="stat-card old-style-stat"><span>Pedidos pendientes</span><strong>${totals.pending}</strong><small>Pendiente / apartado</small></article>
     <article class="stat-card old-style-stat"><span>Productos</span><strong>${productCount}</strong><small>Activos registrados</small></article>
+    <article class="stat-card old-style-stat"><span>Clientes</span><strong>${customers.length}</strong><small>Contactos guardados</small></article>
     <article class="stat-card old-style-stat"><span>Stock bajo</span><strong>${lowStockItems.length}</strong><small>En o bajo mínimo</small></article>
     <article class="stat-card old-style-stat"><span>Invertido en stock</span><strong>${money(inventoryCost)}</strong><small>Costo x piezas</small></article>
     <article class="stat-card old-style-stat"><span>Valor de inventario</span><strong>${money(inventoryValue)}</strong><small>Precio venta x piezas</small></article>`;
@@ -416,6 +564,7 @@ async function saveOrder(event) {
     status: $('#orderStatus').value, order_date: $('#orderDate').value || today(), order_time: $('#orderTime').value || '', due_date: $('#orderDueDate').value || null, delivery: $('#orderDelivery').value.trim(), discount: Number($('#orderDiscount').value || 0), notes: $('#orderNotes').value.trim(), updated_at: new Date().toISOString()
   };
   let orderId = id;
+  await upsertCustomerFromOrderPayload(payload);
   setStatus('#orderFormStatus', 'Guardando pedido...');
   if (id) {
     const { error } = await supabase.from('orders').update(payload).eq('id', id);
@@ -431,7 +580,7 @@ async function saveOrder(event) {
   const payments = collectPayments();
   if (payments.length) await supabase.from('order_payments').insert(payments.map(p => ({ ...p, order_id: orderId })));
   $('#orderDialog').close();
-  await loadAdminOrders();
+  await Promise.all([loadAdminOrders(), loadCustomers()]);
   setStatus('#orderFormStatus', '');
 }
 async function convertWebOrder(webOrderId) {
@@ -571,7 +720,17 @@ $('#hideProductBtn').addEventListener('click', hideProduct);
 $('#refreshBtn').addEventListener('click', loadProducts);
 $('#refreshOrdersBtn').addEventListener('click', loadWebOrders);
 $('#refreshAdminOrdersBtn').addEventListener('click', loadAdminOrders);
-$('#refreshDashboardBtn').addEventListener('click', async () => { await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders()]); renderDashboard(); });
+$('#refreshClientsBtn')?.addEventListener('click', loadCustomers);
+$('#clientForm')?.addEventListener('submit', saveClient);
+$('#clearClientBtn')?.addEventListener('click', clearClientForm);
+$('#deleteClientBtn')?.addEventListener('click', deleteClient);
+$('#clientSearch')?.addEventListener('input', renderClientsTable);
+$('#clientNewOrderBtn')?.addEventListener('click', () => {
+  const id = $('#clientId')?.value;
+  if (id) newOrderForClient(id);
+  else { activateTab('orders'); openOrderDialog(); }
+});
+$('#refreshDashboardBtn').addEventListener('click', async () => { await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]); renderDashboard(); });
 $('#newOrderBtn').addEventListener('click', () => openOrderDialog());
 $('#newOrderFromDashboardBtn').addEventListener('click', () => { activateTab('orders'); openOrderDialog(); });
 $('#orderForm').addEventListener('submit', saveOrder);
@@ -599,6 +758,12 @@ document.addEventListener('click', (event) => {
   if (receipt) showReceipt(receipt);
   const waReceipt = event.target.closest('[data-whatsapp-receipt]')?.dataset.whatsappReceipt;
   if (waReceipt) sendReceiptToWhatsApp(waReceipt);
+  const editClientId = event.target.closest('[data-edit-client]')?.dataset.editClient;
+  if (editClientId) editClient(editClientId);
+  const clientOrderId = event.target.closest('[data-client-order]')?.dataset.clientOrder;
+  if (clientOrderId) newOrderForClient(clientOrderId);
+  const clientWaId = event.target.closest('[data-client-wa]')?.dataset.clientWa;
+  if (clientWaId) whatsappClient(clientWaId);
   const convert = event.target.closest('[data-convert-web-order]')?.dataset.convertWebOrder;
   if (convert) convertWebOrder(convert);
 });

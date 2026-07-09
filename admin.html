@@ -35,6 +35,7 @@
       <nav class="nav">
         <button data-tab="dashboard" class="active">Resumen</button>
         <button data-tab="products">Productos</button>
+        <button data-tab="clients">Clientes</button>
         <button data-tab="orders">Pedidos</button>
         <button data-tab="webOrders">Pedidos web</button>
         <button data-tab="settings">Respaldo / Identidad</button>
@@ -102,6 +103,51 @@
               <table class="table">
                 <thead><tr><th>Producto</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
                 <tbody id="productsTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+
+      <section id="clientsTab" class="tab hidden">
+        <div class="hero">
+          <div>
+            <span class="kicker">CLIENTES</span>
+            <h2>Control de clientes</h2>
+            <p class="muted">Registra clientes, teléfonos, redes, notas y revisa saldos/pedidos relacionados.</p>
+          </div>
+          <div class="toolbar"><button class="ghost" id="clearClientBtn">Nuevo cliente</button><button class="ghost" id="refreshClientsBtn">Actualizar</button></div>
+        </div>
+        <div class="admin-grid clients-grid">
+          <form id="clientForm" class="panel">
+            <h3 id="clientFormTitle">Nuevo cliente</h3>
+            <input id="clientId" type="hidden">
+            <div class="form-grid">
+              <label>Nombre<input id="clientName" required placeholder="Nombre del cliente"></label>
+              <label>Teléfono / WhatsApp<input id="clientPhone" placeholder="311..."></label>
+              <label>Red social<input id="clientSocial" placeholder="Instagram / Facebook"></label>
+              <label>Email<input id="clientEmail" type="email" placeholder="cliente@email.com"></label>
+              <label class="wide">Dirección / entrega<textarea id="clientAddress" placeholder="Dirección, referencias o método preferido"></textarea></label>
+              <label class="wide">Notas<textarea id="clientNotes" placeholder="Preferencias, tallas frecuentes, comentarios..."></textarea></label>
+            </div>
+            <div class="toolbar" style="margin-top:16px;">
+              <button class="primary" type="submit">Guardar cliente</button>
+              <button class="ghost" type="button" id="clientNewOrderBtn">Nuevo pedido</button>
+              <button class="danger" type="button" id="deleteClientBtn">Borrar</button>
+            </div>
+            <p id="clientStatusText" class="status"></p>
+          </form>
+
+          <section class="panel">
+            <div class="panel-head-inline">
+              <h3>Clientes guardados</h3>
+              <input id="clientSearch" type="search" placeholder="Buscar cliente, teléfono o red...">
+            </div>
+            <div style="overflow:auto; max-height:720px;">
+              <table class="table">
+                <thead><tr><th>Cliente</th><th>Pedidos</th><th>Saldo</th><th></th></tr></thead>
+                <tbody id="clientsTable"></tbody>
               </table>
             </div>
           </section>

@@ -716,3 +716,118 @@ h1, h2, h3 { margin: 0; letter-spacing: -.04em; }
   .catalog-photo { height: 320px; }
   .catalog-section-head h2 { font-size: 2rem; }
 }
+
+
+/* v22 refinements: editorial banner, quick view, product page, extra filters */
+.editorial-banner {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 18px;
+  padding: 26px 0 6px;
+  border-bottom: 1px solid #ebe7e1;
+}
+.editorial-copy h1 {
+  margin: 0 0 14px;
+  font-size: 4rem;
+  line-height: .95;
+  letter-spacing: -.08em;
+}
+.editorial-copy p { max-width: 520px; color: #666; font-size: 1.02rem; }
+.editorial-feature { min-height: 300px; }
+.editorial-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #ece8e2;
+  background: #faf9f6;
+}
+.editorial-card img { width: 100%; height: 300px; object-fit: contain; background: #f5f2ec; }
+.editorial-card-copy { display: grid; gap: 8px; padding: 18px; }
+.editorial-card-copy strong { font-size: 1.6rem; line-height: 1.05; }
+.editorial-card-copy em { font-style: normal; font-weight: 800; }
+.catalog-card { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.catalog-card:hover { transform: translateY(-3px); background: rgba(255,255,255,.45); }
+.card-link-wrap, .title-row h3 a { text-decoration: none; color: inherit; }
+.card-link-wrap:hover img { transform: scale(1.02); }
+.catalog-photo img { transition: transform .25s ease; }
+.card-actions { grid-template-columns: 1fr 1fr 1.35fr; }
+.quickview-modal { width: min(1100px, calc(100vw - 30px)); }
+.quickview-card { padding: 20px; }
+.quickview-grid {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 22px;
+}
+.quickview-info h2 { margin: 0 0 8px; font-size: 2.25rem; letter-spacing: -.05em; }
+.quickview-price { display: block; font-size: 1.55rem; margin-bottom: 14px; }
+.quickview-controls { margin: 16px 0 12px; }
+.quickview-actions { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
+.product-page-wrap {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 22px;
+}
+.back-link {
+  display: inline-flex;
+  margin-bottom: 16px;
+  color: #111;
+  text-decoration: none;
+  font-weight: 700;
+}
+.product-detail-shell {
+  border-top: 1px solid #ebe7e1;
+  padding-top: 18px;
+}
+.product-detail-grid {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 28px;
+}
+.product-gallery-main {
+  border: 1px solid #ece8e2;
+  background: #f7f5f1;
+  min-height: 600px;
+  display: grid;
+  place-items: center;
+}
+.product-gallery-main img { width: 100%; height: 600px; object-fit: contain; }
+.product-thumb-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.product-thumb { width: 90px; height: 90px; padding: 0; border: 1px solid #ece8e2; background: #fff; }
+.product-thumb.active { border-color: #111; }
+.product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.product-detail-info h1 { margin: 0 0 10px; font-size: 3rem; line-height: .95; letter-spacing: -.06em; }
+.product-detail-price { display: block; font-size: 1.75rem; margin-bottom: 14px; }
+.product-detail-description { color: #555; line-height: 1.55; max-width: 560px; }
+.product-detail-meta { display: grid; gap: 8px; margin: 18px 0; }
+.product-order-box { display: grid; gap: 12px; max-width: 440px; }
+.product-detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 1200px) {
+  .catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .editorial-copy h1 { font-size: 3.2rem; }
+}
+@media (max-width: 1024px) {
+  .editorial-banner, .quickview-grid, .product-detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .card-actions, .product-detail-actions { grid-template-columns: 1fr; }
+  .editorial-copy h1 { font-size: 2.4rem; }
+  .product-detail-info h1 { font-size: 2.2rem; }
+  .product-gallery-main, .product-gallery-main img { min-height: 360px; height: 360px; }
+}
+
+/* v23 clients section */
+.clients-grid {
+  grid-template-columns: .85fr 1.15fr;
+}
+#clientsTable td:first-child {
+  min-width: 240px;
+}
+#clientSearch {
+  max-width: 320px;
+}
+@media (max-width: 1000px) {
+  .clients-grid { grid-template-columns: 1fr; }
+  #clientSearch { max-width: none; }
+}

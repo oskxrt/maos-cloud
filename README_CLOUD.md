@@ -177,3 +177,20 @@ Después de subir los archivos a GitHub, Vercel redespliega solo.
 - Logo más grande y sin contenedor redondo.
 - Categorías visibles al lado izquierdo.
 - Nueva sección de **Novedades** al inicio del catálogo.
+
+
+## v22
+
+- Banner editorial al inicio del catálogo.
+- Filtros adicionales por talla y color.
+- Botón de **Quick add** y **Vista rápida** en cada producto.
+- Nueva página individual `product.html?id=...` para cada producto.
+- Hover más fino y look más cercano a una tienda streetwear real.
+
+## v23 — Clientes
+
+- Nueva sección **Clientes** dentro del panel admin.
+- Permite registrar nombre, teléfono/WhatsApp, red social, email, dirección y notas.
+- Muestra pedidos relacionados, saldo pendiente, vendido total y último pedido.
+- Botones rápidos para editar cliente, crear pedido para ese cliente y mandar WhatsApp.
+- Ejecuta `supabase-schema-v23-clients.sql` en Supabase antes de usar esta sección.
