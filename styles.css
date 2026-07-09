@@ -2260,3 +2260,93 @@ body.quickview-scroll-lock {
   .client-list-head { flex-direction: column; }
   #clientSearch { max-width: none; width: 100%; }
 }
+
+/* v34 clients list modal + external image URLs */
+.clients-list-only-ui .hero {
+  align-items: end;
+}
+.clients-list-only-ui .clients-only-panel {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 32px;
+}
+.clients-list-only-ui .clients-table-shell {
+  max-height: none;
+  overflow: visible;
+}
+.clients-list-only-ui .admin-clients-table {
+  width: 100%;
+  border-spacing: 0 12px;
+}
+.clients-list-only-ui .admin-client-row td {
+  padding: 18px 16px;
+}
+.client-modal {
+  width: min(760px, calc(100vw - 24px));
+}
+.client-modal-card {
+  width: 100%;
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  padding: 28px;
+}
+.client-modal-card .modal-head {
+  align-items: flex-start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--admin-border, #e4e8ef);
+}
+.client-modal-card .modal-head h3 {
+  margin: 4px 0 0;
+  font-size: 2.1rem;
+  letter-spacing: -.055em;
+}
+.client-modal-card .form-grid {
+  margin-top: 20px;
+}
+.client-modal-actions {
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid var(--admin-border, #e4e8ef);
+  padding-top: 18px !important;
+}
+.product-url-field textarea {
+  min-height: 92px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: .88rem;
+}
+.product-url-field .field-hint,
+.order-client-autocomplete .field-hint {
+  display: block;
+  margin-top: 7px;
+  color: #667085;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+.admin-products-ui .product-form-panel {
+  position: sticky;
+  top: 20px;
+}
+.admin-products-ui .preview-list {
+  display: flex;
+  min-height: 88px;
+}
+.admin-products-ui .preview-list:empty::before {
+  content: 'Sin fotos';
+  color: #667085;
+}
+.admin-products-ui .admin-grid {
+  grid-template-columns: minmax(460px, .95fr) minmax(560px, 1.05fr);
+}
+@media (max-width: 1180px) {
+  .admin-products-ui .product-form-panel { position: static; }
+  .admin-products-ui .admin-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .clients-list-only-ui .clients-only-panel,
+  .client-modal-card { padding: 18px; border-radius: 24px; }
+  .client-modal-actions { flex-direction: column; align-items: stretch; }
+  .client-modal-actions button { width: 100%; }
+  .clients-list-only-ui .admin-clients-table { min-width: 760px; }
+}

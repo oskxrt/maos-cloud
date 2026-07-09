@@ -83,6 +83,10 @@
               <label>Precio<input id="productPrice" type="number" min="0" step="0.01" value="0"></label>
               <label>Estado<select id="productStatus"><option>Disponible</option><option>Oculto</option><option>Agotado</option></select></label>
               <label>Fotos<input id="productImages" type="file" accept="image/*" multiple></label>
+              <label class="wide product-url-field">URLs de imágenes
+                <textarea id="productImageUrls" placeholder="https://ejemplo.com/foto-1.jpg&#10;https://ejemplo.com/foto-2.jpg"></textarea>
+                <span class="field-hint">Puedes pegar URLs externas para ahorrar espacio. Una URL por línea. Si subes archivos, también se agregan al catálogo.</span>
+              </label>
               <label class="wide">Descripción<textarea id="productDescription" placeholder="Detalles visibles para cliente"></textarea></label>
               <label class="wide">Variantes / stock
                 <textarea id="productVariants" placeholder="Una por línea: S / Negro / 1&#10;M / Negro / 1&#10;XL / Negro / 1"></textarea>
@@ -110,48 +114,27 @@
       </section>
 
 
-      <section id="clientsTab" class="tab hidden admin-clients-ui">
-        <div class="hero">
+      <section id="clientsTab" class="tab hidden admin-clients-ui clients-list-only-ui">
+        <div class="hero clients-hero-clean">
           <div>
             <span class="kicker">CLIENTES</span>
-            <h2>Control de clientes</h2>
-            <p class="muted">Registra clientes, teléfonos, redes, notas y revisa saldos/pedidos relacionados.</p>
+            <h2>Clientes</h2>
+            <p class="muted">Lista de clientes registrados, contacto rápido, saldos y pedidos relacionados.</p>
           </div>
-          <div class="toolbar"><button class="ghost" id="clearClientBtn">Nuevo cliente</button><button class="ghost" id="refreshClientsBtn">Actualizar</button></div>
+          <div class="toolbar"><button class="primary" id="clearClientBtn">Nuevo cliente</button><button class="ghost" id="refreshClientsBtn">Actualizar</button></div>
         </div>
-        <div class="admin-grid clients-grid">
-          <form id="clientForm" class="panel admin-form-panel client-form-panel">
-            <h3 id="clientFormTitle">Nuevo cliente</h3>
-            <input id="clientId" type="hidden">
-            <div class="form-grid">
-              <label>Nombre<input id="clientName" required placeholder="Nombre del cliente"></label>
-              <label>Teléfono / WhatsApp<input id="clientPhone" placeholder="311..."></label>
-              <label>Red social<input id="clientSocial" placeholder="Instagram / Facebook"></label>
-              <label>Email<input id="clientEmail" type="email" placeholder="cliente@email.com"></label>
-              <label class="wide">Dirección / entrega<textarea id="clientAddress" placeholder="Dirección, referencias o método preferido"></textarea></label>
-              <label class="wide">Notas<textarea id="clientNotes" placeholder="Preferencias, tallas frecuentes, comentarios..."></textarea></label>
-            </div>
-            <div class="toolbar" style="margin-top:16px;">
-              <button class="primary" type="submit">Guardar cliente</button>
-              <button class="ghost" type="button" id="clientNewOrderBtn">Nuevo pedido</button>
-              <button class="danger" type="button" id="deleteClientBtn">Borrar</button>
-            </div>
-            <p id="clientStatusText" class="status"></p>
-          </form>
-
-          <section class="panel admin-list-panel client-list-panel">
-            <div class="panel-head-inline client-list-head">
-              <div><h3>Clientes guardados</h3><p class="muted">Consulta saldos, pedidos y contacto rápido.</p></div>
-              <input id="clientSearch" type="search" placeholder="Buscar cliente, teléfono o red...">
-            </div>
-            <div class="admin-table-shell">
-              <table class="table admin-clients-table">
-                <thead><tr><th>Cliente</th><th>Pedidos</th><th>Saldo</th><th></th></tr></thead>
-                <tbody id="clientsTable"></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
+        <section class="panel admin-list-panel client-list-panel clients-only-panel">
+          <div class="panel-head-inline client-list-head">
+            <div><h3>Lista de clientes</h3><p class="muted">Busca, edita o crea pedidos sin llenar formularios innecesarios.</p></div>
+            <input id="clientSearch" type="search" placeholder="Buscar cliente, teléfono o red...">
+          </div>
+          <div class="admin-table-shell clients-table-shell">
+            <table class="table admin-clients-table">
+              <thead><tr><th>Cliente</th><th>Pedidos</th><th>Saldo</th><th></th></tr></thead>
+              <tbody id="clientsTable"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
       <section id="ordersTab" class="tab hidden">
@@ -219,6 +202,28 @@
       </section>
     </main>
   </section>
+
+
+  <dialog id="clientDialog" class="modal client-modal">
+    <form id="clientForm" class="modal-card client-modal-card admin-form-panel client-form-panel">
+      <div class="modal-head"><div><span class="kicker">CLIENTE</span><h3 id="clientFormTitle">Nuevo cliente</h3></div><button type="button" class="icon-btn" data-close="clientDialog">×</button></div>
+      <input id="clientId" type="hidden">
+      <div class="form-grid">
+        <label>Nombre<input id="clientName" required placeholder="Nombre del cliente"></label>
+        <label>Teléfono / WhatsApp<input id="clientPhone" placeholder="311..."></label>
+        <label>Red social<input id="clientSocial" placeholder="Instagram / Facebook"></label>
+        <label>Email<input id="clientEmail" type="email" placeholder="cliente@email.com"></label>
+        <label class="wide">Dirección / entrega<textarea id="clientAddress" placeholder="Dirección, referencias o método preferido"></textarea></label>
+        <label class="wide">Notas<textarea id="clientNotes" placeholder="Preferencias, tallas frecuentes, comentarios..."></textarea></label>
+      </div>
+      <div class="toolbar client-modal-actions" style="margin-top:16px;">
+        <button class="primary" type="submit">Guardar cliente</button>
+        <button class="ghost" type="button" id="clientNewOrderBtn">Nuevo pedido</button>
+        <button class="danger" type="button" id="deleteClientBtn">Borrar</button>
+      </div>
+      <p id="clientStatusText" class="status"></p>
+    </form>
+  </dialog>
 
   <dialog id="orderDialog" class="modal">
     <form id="orderForm" class="modal-card">

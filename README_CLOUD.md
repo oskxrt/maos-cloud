@@ -94,3 +94,9 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Tablas convertidas en filas tipo card con miniaturas, avatares, chips y micro-animaciones.
 - Formularios con mejor espaciado, foco visual y inputs más limpios.
 - Mejoras responsive para móvil/tablet.
+
+## v34
+
+- La sección **Clientes** ahora queda como lista limpia; el formulario se abre en ventana modal al presionar **Nuevo cliente** o **Editar**.
+- Productos ahora permite agregar **URLs externas de imágenes** además de subir archivos. Pega una URL por línea en el campo "URLs de imágenes".
+- Al guardar un producto se sincronizan las URLs pegadas y las fotos subidas en el catálogo.

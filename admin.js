@@ -110,6 +110,7 @@ function clearForm() {
   $('#productDescription').value = '';
   $('#productVariants').value = '';
   $('#productImages').value = '';
+  if ($('#productImageUrls')) $('#productImageUrls').value = '';
   currentImages = [];
   selectedFiles = [];
   renderPreview();
@@ -129,9 +130,17 @@ function parseVariants(text) {
   }).filter(Boolean);
 }
 function variantsText(variants = []) { return variants.map(v => [v.size, v.color, v.stock].filter(v => v !== undefined && v !== null && v !== '').join(' / ')).join('\n'); }
+function imageUrlLines() {
+  return String($('#productImageUrls')?.value || '')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => /^https?:\/\//i.test(line));
+}
 function renderPreview() {
-  const imgs = [...currentImages.map(i => i.url), ...selectedFiles.map(f => URL.createObjectURL(f))];
-  $('#imagePreview').innerHTML = imgs.map(src => `<img src="${src}" alt="preview">`).join('') || '<span class="muted">Sin fotos</span>';
+  const urls = imageUrlLines();
+  const fileUrls = selectedFiles.map(f => URL.createObjectURL(f));
+  const imgs = [...urls, ...fileUrls];
+  $('#imagePreview').innerHTML = imgs.map(src => `<img src="${escapeAttr(src)}" alt="preview">`).join('') || '<span class="muted">Sin fotos</span>';
 }
 async function loadProducts() {
   const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
@@ -145,7 +154,7 @@ async function loadProducts() {
     return `<tr class="admin-product-row"><td><div class="admin-product-cell"><div class="admin-thumb">${image ? `<img src="${image}" alt="${escapeHTML(product.name)}">` : `<span>${escapeHTML((product.name || 'P').slice(0,1).toUpperCase())}</span>`}</div><div><strong>${escapeHTML(product.name)}</strong><br><span class="muted">${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(product.category || 'Sin categoría')}</span><div class="mini-meta"><span>Stock ${stock}</span><span>${variants} variantes</span></div></div></div></td><td><strong>${money(product.price)}</strong><br><span class="muted">Costo ${money(product.cost || 0)}</span></td><td><span class="badge status-${normalize(status)}">${escapeHTML(status)}</span></td><td><button class="ghost small admin-action-btn" data-edit="${product.id}">Editar</button></td></tr>`;
   }).join('') || '<tr><td colspan="4">Sin productos todavía.</td></tr>';
 }
-async function uploadImages(productId, files) {
+async function uploadImages(productId, files, startSort = 0) {
   const rows = [];
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -153,9 +162,16 @@ async function uploadImages(productId, files) {
     const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
     if (error) throw error;
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    rows.push({ product_id: productId, url: data.publicUrl, path, sort_order: currentImages.length + i });
+    rows.push({ product_id: productId, url: data.publicUrl, path, sort_order: startSort + i });
   }
   if (rows.length) await supabase.from('product_images').insert(rows);
+}
+async function syncProductImages(productId) {
+  const urls = imageUrlLines();
+  await supabase.from('product_images').delete().eq('product_id', productId);
+  const urlRows = urls.map((url, index) => ({ product_id: productId, url, path: null, sort_order: index }));
+  if (urlRows.length) await supabase.from('product_images').insert(urlRows);
+  if (selectedFiles.length) await uploadImages(productId, selectedFiles, urlRows.length);
 }
 async function saveProduct(event) {
   event.preventDefault();
@@ -178,7 +194,7 @@ async function saveProduct(event) {
   }
   const variants = parseVariants($('#productVariants').value).map(v => ({ ...v, product_id: productId }));
   if (variants.length) await supabase.from('product_variants').insert(variants);
-  if (selectedFiles.length) await uploadImages(productId, selectedFiles);
+  await syncProductImages(productId);
   await loadProducts();
   clearForm();
   renderDashboard();
@@ -199,6 +215,7 @@ function editProduct(id) {
   $('#productDescription').value = p.description || '';
   $('#productVariants').value = variantsText(productVariants(p));
   currentImages = [...(p.product_images || [])].sort((a,b) => (a.sort_order || 0) - (b.sort_order || 0));
+  if ($('#productImageUrls')) $('#productImageUrls').value = currentImages.map(img => img.url).filter(Boolean).join('\n');
   selectedFiles = [];
   renderPreview();
   activateTab('products');
@@ -354,6 +371,11 @@ function clearClientForm() {
   $('#clientNotes').value = '';
   setStatus('#clientStatusText', '');
 }
+function openClientDialog({ reset = true } = {}) {
+  if (reset) clearClientForm();
+  $('#clientDialog')?.showModal();
+  setTimeout(() => $('#clientName')?.focus(), 60);
+}
 function editClient(id) {
   const customer = customers.find(c => c.id === id);
   if (!customer) return;
@@ -366,6 +388,7 @@ function editClient(id) {
   $('#clientEmail').value = customer.email || '';
   $('#clientAddress').value = customer.address || '';
   $('#clientNotes').value = customer.notes || '';
+  openClientDialog({ reset: false });
 }
 async function saveClient(event) {
   event?.preventDefault?.();
@@ -385,9 +408,10 @@ async function saveClient(event) {
   setStatus('#clientStatusText', 'Guardando cliente...');
   const result = id ? await supabase.from('customers').update(payload).eq('id', id) : await supabase.from('customers').insert(payload);
   if (result.error) { setStatus('#clientStatusText', result.error.message); return; }
-  clearClientForm();
   await loadCustomers();
   setStatus('#clientStatusText', 'Cliente guardado.');
+  $('#clientDialog')?.close();
+  clearClientForm();
 }
 async function deleteClient() {
   const id = $('#clientId')?.value;
@@ -395,8 +419,9 @@ async function deleteClient() {
   if (!confirm('¿Borrar este cliente? Sus pedidos existentes no se borran.')) return;
   const { error } = await supabase.from('customers').delete().eq('id', id);
   if (error) { setStatus('#clientStatusText', error.message); return; }
-  clearClientForm();
   await loadCustomers();
+  $('#clientDialog')?.close();
+  clearClientForm();
 }
 async function upsertCustomerFromOrderPayload(payload) {
   const selectedId = $('#orderCustomerId')?.value || payload.customer_id || '';
@@ -828,7 +853,7 @@ async function importLocalJson() {
       if (String(imgs[i]).startsWith('data:')) files.push(await dataUrlToFile(imgs[i], `${payload.sku || productId}-${i}.jpg`));
       else await supabase.from('product_images').insert({ product_id: productId, url: imgs[i], sort_order: i });
     }
-    if (files.length) { currentImages = []; await uploadImages(productId, files); }
+    if (files.length) { currentImages = []; await uploadImages(productId, files, imgs.filter(x => !String(x).startsWith('data:')).length); }
     count++;
   }
   setStatus('#importStatus', `Importados ${count} productos.`);
@@ -844,6 +869,7 @@ $('#loginForm').addEventListener('submit', async (event) => { event.preventDefau
 $('#logoutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); showLogin(); });
 $('#productForm').addEventListener('submit', saveProduct);
 $('#productImages').addEventListener('change', (event) => { selectedFiles = [...(event.target.files || [])]; renderPreview(); });
+$('#productImageUrls')?.addEventListener('input', renderPreview);
 $('#clearProductBtn').addEventListener('click', clearForm);
 $('#hideProductBtn').addEventListener('click', hideProduct);
 $('#refreshBtn').addEventListener('click', loadProducts);
@@ -851,13 +877,14 @@ $('#refreshOrdersBtn').addEventListener('click', loadWebOrders);
 $('#refreshAdminOrdersBtn').addEventListener('click', loadAdminOrders);
 $('#refreshClientsBtn')?.addEventListener('click', loadCustomers);
 $('#clientForm')?.addEventListener('submit', saveClient);
-$('#clearClientBtn')?.addEventListener('click', clearClientForm);
+$('#clearClientBtn')?.addEventListener('click', () => openClientDialog());
 $('#deleteClientBtn')?.addEventListener('click', deleteClient);
 $('#clientSearch')?.addEventListener('input', renderClientsTable);
 $('#clientNewOrderBtn')?.addEventListener('click', () => {
   const id = $('#clientId')?.value;
   if (id) newOrderForClient(id);
   else { activateTab('orders'); openOrderDialog(); }
+  $('#clientDialog')?.close();
 });
 $('#refreshDashboardBtn').addEventListener('click', async () => { await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]); renderDashboard(); });
 $('#newOrderBtn').addEventListener('click', () => openOrderDialog());
