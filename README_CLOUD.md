@@ -41,3 +41,14 @@ Sube/reemplaza estos archivos en tu repo:
 - `PEGAR_EN_SUPABASE_TODO_INTEGRADO.sql`
 
 No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
+
+## v28
+
+- Se corrigió el catálogo público: se quitaron secciones de novedades y se dejó el grid principal más limpio/minimal.
+- El carrito vacío ya no ocupa espacio en la página principal.
+- El catálogo ahora muestra un mensaje de error si Supabase falla, en lugar de quedarse visualmente en blanco.
+- La carga pública ahora trae productos visibles de forma más tolerante y excluye solo ocultos/archivados/cancelados.
+- En el modal de pedido interno se agregó selector de **Cliente registrado**.
+- Al elegir un cliente registrado, se llenan nombre, teléfono, red social y dirección automáticamente.
+- Los pedidos guardan `customer_id` cuando existe, manteniendo también nombre/teléfono para compatibilidad.
+- Se incluye `PEGAR_EN_SUPABASE_TODO_CORREGIDO_V28.sql` como archivo único para copiar/pegar en Supabase.

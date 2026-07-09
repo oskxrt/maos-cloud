@@ -275,6 +275,7 @@ async function loadCustomers() {
   }
   customers = data || [];
   renderClientsTable();
+  renderCustomerSelect();
   renderDashboard();
 }
 function renderClientsTable() {
@@ -292,6 +293,36 @@ function renderClientsTable() {
       <td><div class="row-actions"><button class="ghost small" data-edit-client="${customer.id}">Editar</button><button class="ghost small" data-client-order="${customer.id}">Pedido</button>${phone ? `<button class="ghost small" data-client-wa="${customer.id}">WhatsApp</button>` : ''}</div></td>
     </tr>`;
   }).join('') : '<tr><td colspan="4">Sin clientes registrados.</td></tr>';
+}
+function renderCustomerSelect(selectedId = '') {
+  const select = $('#orderCustomerSelect');
+  if (!select) return;
+  const current = selectedId || select.value || '';
+  const sorted = [...customers].sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'));
+  select.innerHTML = '<option value="">Nuevo cliente / escribir manual</option>' + sorted.map(customer => `<option value="${customer.id}">${escapeHTML(customer.name || 'Sin nombre')}${customer.phone ? ` · ${escapeHTML(customer.phone)}` : ''}</option>`).join('');
+  select.value = current && sorted.some(c => c.id === current) ? current : '';
+}
+function findCustomerForOrder(order = {}) {
+  if (order.customer_id) {
+    const byId = customers.find(c => c.id === order.customer_id);
+    if (byId) return byId;
+  }
+  const phone = normalizeWhatsapp(order.customer_phone || '');
+  if (phone) {
+    const byPhone = customers.find(c => normalizeWhatsapp(c.phone || '') === phone);
+    if (byPhone) return byPhone;
+  }
+  const name = normalize(order.customer_name || '');
+  if (name) return customers.find(c => normalize(c.name || '') === name) || null;
+  return null;
+}
+function fillOrderCustomer(customer) {
+  if (!customer) return;
+  $('#orderCustomerSelect').value = customer.id || '';
+  $('#orderCustomerName').value = customer.name || '';
+  $('#orderCustomerPhone').value = customer.phone || '';
+  $('#orderCustomerSocial').value = customer.social || '';
+  if (!$('#orderDelivery').value) $('#orderDelivery').value = customer.address || '';
 }
 function clearClientForm() {
   $('#clientFormTitle').textContent = 'Nuevo cliente';
@@ -349,9 +380,14 @@ async function deleteClient() {
   await loadCustomers();
 }
 async function upsertCustomerFromOrderPayload(payload) {
+  const selectedId = $('#orderCustomerSelect')?.value || payload.customer_id || '';
+  if (selectedId) {
+    const selected = customers.find(c => c.id === selectedId);
+    if (selected) return selected.id;
+  }
   const name = (payload.customer_name || '').trim();
   const phone = (payload.customer_phone || '').trim();
-  if (!name && !phone) return;
+  if (!name && !phone) return null;
   const keyPhone = normalizeWhatsapp(phone);
   try {
     let existing = null;
@@ -364,19 +400,23 @@ async function upsertCustomerFromOrderPayload(payload) {
       existing = data;
     }
     const data = { name: name || existing?.name || 'Cliente', phone, phone_normalized: keyPhone || null, social: payload.customer_social || '', updated_at: new Date().toISOString() };
-    if (existing?.id) await supabase.from('customers').update({ ...data, social: data.social || existing.social || '' }).eq('id', existing.id);
-    else await supabase.from('customers').insert(data);
-  } catch (error) { console.warn('No se pudo sincronizar cliente', error); }
+    if (existing?.id) {
+      await supabase.from('customers').update({ ...data, social: data.social || existing.social || '' }).eq('id', existing.id);
+      return existing.id;
+    }
+    const { data: inserted } = await supabase.from('customers').insert(data).select('id').single();
+    return inserted?.id || null;
+  } catch (error) {
+    console.warn('No se pudo sincronizar cliente', error);
+    return null;
+  }
 }
 function newOrderForClient(id) {
   const customer = customers.find(c => c.id === id);
   if (!customer) return;
   activateTab('orders');
   openOrderDialog();
-  $('#orderCustomerName').value = customer.name || '';
-  $('#orderCustomerPhone').value = customer.phone || '';
-  $('#orderCustomerSocial').value = customer.social || '';
-  $('#orderDelivery').value = customer.address || '';
+  fillOrderCustomer(customer);
 }
 function whatsappClient(id) {
   const customer = customers.find(c => c.id === id);
@@ -534,9 +574,12 @@ function openOrderDialog(order = null) {
   editingOrder = order;
   $('#orderModalTitle').textContent = order ? `Editar ${order.folio}` : 'Nuevo pedido';
   $('#orderId').value = order?.id || '';
-  $('#orderCustomerName').value = order?.customer_name || '';
-  $('#orderCustomerPhone').value = order?.customer_phone || '';
-  $('#orderCustomerSocial').value = order?.customer_social || '';
+  const matchedCustomer = order ? findCustomerForOrder(order) : null;
+  renderCustomerSelect(matchedCustomer?.id || order?.customer_id || '');
+  $('#orderCustomerSelect').value = matchedCustomer?.id || order?.customer_id || '';
+  $('#orderCustomerName').value = order?.customer_name || matchedCustomer?.name || '';
+  $('#orderCustomerPhone').value = order?.customer_phone || matchedCustomer?.phone || '';
+  $('#orderCustomerSocial').value = order?.customer_social || matchedCustomer?.social || '';
   $('#orderStatus').value = order?.status || 'Pendiente';
   $('#orderDate').value = order?.order_date || today();
   $('#orderTime').value = order?.order_time || nowTime();
@@ -560,11 +603,12 @@ async function saveOrder(event) {
   const items = collectOrderItems();
   if (!items.length) { setStatus('#orderFormStatus', 'Agrega al menos un producto.'); return; }
   const payload = {
-    folio: editingOrder?.folio || nextFolio(), customer_name: $('#orderCustomerName').value.trim(), customer_phone: $('#orderCustomerPhone').value.trim(), customer_social: $('#orderCustomerSocial').value.trim(),
+    folio: editingOrder?.folio || nextFolio(), customer_id: $('#orderCustomerSelect')?.value || null, customer_name: $('#orderCustomerName').value.trim(), customer_phone: $('#orderCustomerPhone').value.trim(), customer_social: $('#orderCustomerSocial').value.trim(),
     status: $('#orderStatus').value, order_date: $('#orderDate').value || today(), order_time: $('#orderTime').value || '', due_date: $('#orderDueDate').value || null, delivery: $('#orderDelivery').value.trim(), discount: Number($('#orderDiscount').value || 0), notes: $('#orderNotes').value.trim(), updated_at: new Date().toISOString()
   };
   let orderId = id;
-  await upsertCustomerFromOrderPayload(payload);
+  const customerId = await upsertCustomerFromOrderPayload(payload);
+  payload.customer_id = customerId || payload.customer_id || null;
   setStatus('#orderFormStatus', 'Guardando pedido...');
   if (id) {
     const { error } = await supabase.from('orders').update(payload).eq('id', id);
@@ -757,6 +801,10 @@ $('#refreshDashboardBtn').addEventListener('click', async () => { await Promise.
 $('#newOrderBtn').addEventListener('click', () => openOrderDialog());
 $('#newOrderFromDashboardBtn').addEventListener('click', () => { activateTab('orders'); openOrderDialog(); });
 $('#orderForm').addEventListener('submit', saveOrder);
+$('#orderCustomerSelect')?.addEventListener('change', (event) => {
+  const customer = customers.find(c => c.id === event.target.value);
+  if (customer) fillOrderCustomer(customer);
+});
 $('#addOrderItemBtn').addEventListener('click', () => addOrderItemRow());
 $('#addPaymentBtn').addEventListener('click', () => addPaymentRow({ amount: 0, method: 'Efectivo' }));
 $('#orderDiscount').addEventListener('input', updateOrderPreview);
