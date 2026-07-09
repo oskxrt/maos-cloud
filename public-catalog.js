@@ -31,12 +31,10 @@ function colorNameToHex(name) {
   return map[key] || '#cbd5e1';
 }
 
-function productLink(product) { return `product.html?id=${encodeURIComponent(product.id)}`; }
-
 function renderBrand() {
   const logo = $('#publicBrandLogo');
   const name = settings.brand_name || cfg.BRAND_NAME || 'MAOS';
-  if (logo) logo.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="${escapeHTML(name)}">` : `<span>${escapeHTML(name)}</span>`;
+  if (logo) logo.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : `<span>${escapeHTML(name)}</span>`;
 }
 
 async function loadSettings() {
@@ -47,12 +45,18 @@ async function loadSettings() {
   renderBrand();
 }
 
-function carousel(product, mode='card') {
+function firstPhoto(product) {
   const imgs = productImages(product);
   if (!imgs.length) return `<div class="minimal-product-photo"><div class="minimal-no-photo">Sin foto</div></div>`;
+  return `<div class="minimal-product-photo"><img src="${imgs[0]}" alt="${escapeHTML(product.name)}"></div>`;
+}
+
+function carousel(product, mode='quick') {
+  const imgs = productImages(product);
+  if (!imgs.length) return `<div class="minimal-product-photo quick-photo"><div class="minimal-no-photo">Sin foto</div></div>`;
   const slides = imgs.map((url, i) => `<div class="slide ${i === 0 ? 'active' : ''}"><img src="${url}" alt="${escapeHTML(product.name)} ${i+1}"></div>`).join('');
-  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}:${mode}" type="button">‹</button><button class="carousel-btn next" data-next="${product.id}:${mode}" type="button">›</button>` : '';
-  return `<div class="minimal-product-photo" data-carousel="${product.id}:${mode}" data-index="0" data-count="${imgs.length}">${slides}${controls}</div>`;
+  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}:${mode}" type="button">‹</button><button class="carousel-btn next" data-next="${product.id}:${mode}" type="button">›</button><div class="quick-dots">${imgs.map((_, i) => `<button class="dot ${i===0?'active':''}" data-dot="${product.id}:${i}:${mode}" type="button"></button>`).join('')}</div>` : '';
+  return `<div class="minimal-product-photo quick-photo" data-carousel="${product.id}:${mode}" data-index="0" data-count="${imgs.length}">${slides}${controls}</div>`;
 }
 
 function setCarousel(key, index) {
@@ -63,6 +67,7 @@ function setCarousel(key, index) {
   index = (index + count) % count;
   el.dataset.index = String(index);
   $$('.slide', el).forEach((slide, i) => slide.classList.toggle('active', i === index));
+  $$('.dot', el).forEach((dot, i) => dot.classList.toggle('active', i === index));
 }
 
 function variantSelect(product, cls='variant-select') {
@@ -72,37 +77,24 @@ function variantSelect(product, cls='variant-select') {
 }
 
 function card(product) {
-  const colors = productColors(product);
-  const swatches = colors.length ? `<div class="minimal-swatches">${colors.slice(0,5).map(c => `<span style="--swatch:${colorNameToHex(c)}" title="${escapeHTML(c)}"></span>`).join('')}</div>` : '';
-  return `<article class="minimal-product-card" data-card="${product.id}">
-    <a href="${productLink(product)}" class="minimal-product-link">${carousel(product)}</a>
-    <div class="minimal-product-info">
-      <div class="minimal-product-title"><a href="${productLink(product)}">${escapeHTML(product.name)}</a><strong>${money(product.price)}</strong></div>
-      <p>${escapeHTML(product.category || '')}</p>
-      ${swatches}
-      <div class="minimal-product-actions">
-        <button type="button" data-quick-view="${product.id}">VISTA</button>
-        <button type="button" data-order="${product.id}">WHATSAPP</button>
-      </div>
-      <div class="minimal-product-order">
-        ${variantSelect(product)}
-        <input class="qty" type="number" min="1" step="1" value="1">
-        <button type="button" data-quick-add="${product.id}">AGREGAR</button>
-      </div>
+  return `<article class="minimal-product-card minimal-card-clean" data-open-quick="${product.id}" data-card="${product.id}" tabindex="0" role="button" aria-label="Ver ${escapeHTML(product.name)}">
+    ${firstPhoto(product)}
+    <div class="minimal-product-info clean-info">
+      <div class="minimal-product-title"><span>${escapeHTML(product.name)}</span><strong>${money(product.price)}</strong></div>
     </div>
   </article>`;
 }
 
 function getSelection(productId, root=null, selectClass='.variant-select') {
   const product = products.find(p => p.id === productId);
-  const scope = root || document.querySelector(`[data-card="${productId}"]`);
+  const scope = root || document.querySelector(`[data-card="${productId}"]`) || document;
   const qty = Math.max(1, Number($('.qty', scope)?.value || 1));
   let variant = '';
   const select = $(selectClass, scope);
   if (select?.tagName === 'SELECT') {
     const v = productVariants(product).find(x => x.id === select.value);
     variant = v ? [v.size, v.color].filter(Boolean).join(' / ') : select.selectedOptions[0]?.textContent || '';
-  } else variant = $('.variant-text', scope)?.value || product.variants_text || '';
+  } else variant = $('.variant-text', scope)?.value || product?.variants_text || '';
   return { product, qty, variant };
 }
 
@@ -192,7 +184,6 @@ function quickViewTemplate(product) {
       ${sizes.length ? `<p><strong>Tallas:</strong> ${escapeHTML(sizes.join(', '))}</p>` : ''}
       <div class="order-controls quickview-controls"><label>Variante${variantSelect(product, 'variant-select-quick')}</label><label>Cant.<input class="qty" type="number" min="1" step="1" value="1"></label></div>
       <div class="card-actions quickview-actions"><button class="ghost" data-modal-add="${product.id}" type="button">Agregar al carrito</button><button class="primary" data-modal-order="${product.id}" type="button">Pedir por WhatsApp</button></div>
-      <a class="button ghost" href="${productLink(product)}">Ver producto completo</a>
     </div>
   </div>`;
 }
@@ -230,24 +221,33 @@ document.addEventListener('click', async (event) => {
   if (categoryBtn) { selectedCategory = categoryBtn.dataset.sideCategory || ''; render(); }
   if (event.target.closest('#toggleFiltersBtn') || event.target.closest('#searchToggleBtn')) toggleFilters();
   const prev = event.target.closest('[data-prev]')?.dataset.prev;
-  if (prev) setCarousel(prev, Number(document.querySelector(`[data-carousel="${prev}"]`)?.dataset.index || 0) - 1);
+  if (prev) { event.preventDefault(); event.stopPropagation(); setCarousel(prev, Number(document.querySelector(`[data-carousel="${prev}"]`)?.dataset.index || 0) - 1); return; }
   const next = event.target.closest('[data-next]')?.dataset.next;
-  if (next) setCarousel(next, Number(document.querySelector(`[data-carousel="${next}"]`)?.dataset.index || 0) + 1);
-  const add = event.target.closest('[data-quick-add]')?.dataset.quickAdd;
-  if (add) { const { product, qty, variant } = getSelection(add); cart.push({ product_id: product.id, name: product.name, sku: product.sku || '', variant, qty, price: Number(product.price || 0) }); renderCart(); }
+  if (next) { event.preventDefault(); event.stopPropagation(); setCarousel(next, Number(document.querySelector(`[data-carousel="${next}"]`)?.dataset.index || 0) + 1); return; }
+  const dot = event.target.closest('[data-dot]')?.dataset.dot;
+  if (dot) { event.preventDefault(); event.stopPropagation(); const [id, index, mode='quick'] = dot.split(':'); setCarousel(`${id}:${mode}`, Number(index)); return; }
+  const open = event.target.closest('[data-open-quick]')?.dataset.openQuick;
+  if (open) { openQuickView(open); return; }
   const modalAdd = event.target.closest('[data-modal-add]')?.dataset.modalAdd;
   if (modalAdd) { const root = event.target.closest('[data-quick-root]'); const { product, qty, variant } = getSelection(modalAdd, root, '.variant-select-quick'); cart.push({ product_id: product.id, name: product.name, sku: product.sku || '', variant, qty, price: Number(product.price || 0) }); renderCart(); $('#quickViewModal')?.close(); }
-  const order = event.target.closest('[data-order]')?.dataset.order;
-  if (order) { const { product, qty, variant } = getSelection(order); await sendWhatsApp([{ product_id: product.id, name: product.name, sku: product.sku || '', variant, qty, price: Number(product.price || 0) }]); }
   const modalOrder = event.target.closest('[data-modal-order]')?.dataset.modalOrder;
   if (modalOrder) { const root = event.target.closest('[data-quick-root]'); const { product, qty, variant } = getSelection(modalOrder, root, '.variant-select-quick'); await sendWhatsApp([{ product_id: product.id, name: product.name, sku: product.sku || '', variant, qty, price: Number(product.price || 0) }]); }
-  const qv = event.target.closest('[data-quick-view]')?.dataset.quickView;
-  if (qv) openQuickView(qv);
   const remove = event.target.closest('[data-remove]')?.dataset.remove;
   if (remove !== undefined) { cart.splice(Number(remove), 1); renderCart(); }
   if (event.target.closest('#clearCart')) { cart = []; renderCart(); }
   if (event.target.closest('#sendCart')) await sendWhatsApp(cart);
 });
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    const card = event.target.closest?.('[data-open-quick]');
+    if (card) openQuickView(card.dataset.openQuick);
+  }
+});
+
+$$('dialog').forEach(dialog => dialog.addEventListener('click', (event) => {
+  if (event.target === dialog) dialog.close();
+}));
 
 $('#searchInput').addEventListener('input', render);
 $('#categoryFilter').addEventListener('change', e => { selectedCategory = e.target.value; render(); });

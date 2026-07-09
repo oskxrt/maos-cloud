@@ -275,7 +275,7 @@ async function loadCustomers() {
   }
   customers = data || [];
   renderClientsTable();
-  renderCustomerSelect();
+  renderCustomerSuggestions();
   renderDashboard();
 }
 function renderClientsTable() {
@@ -294,13 +294,27 @@ function renderClientsTable() {
     </tr>`;
   }).join('') : '<tr><td colspan="4">Sin clientes registrados.</td></tr>';
 }
-function renderCustomerSelect(selectedId = '') {
-  const select = $('#orderCustomerSelect');
-  if (!select) return;
-  const current = selectedId || select.value || '';
+
+function renderCustomerSuggestions() {
+  const list = $('#orderCustomersList');
+  if (!list) return;
   const sorted = [...customers].sort((a,b) => String(a.name || '').localeCompare(String(b.name || ''), 'es'));
-  select.innerHTML = '<option value="">Nuevo cliente / escribir manual</option>' + sorted.map(customer => `<option value="${customer.id}">${escapeHTML(customer.name || 'Sin nombre')}${customer.phone ? ` · ${escapeHTML(customer.phone)}` : ''}</option>`).join('');
-  select.value = current && sorted.some(c => c.id === current) ? current : '';
+  list.innerHTML = sorted.map(customer => `<option value="${escapeAttr(customer.name || '')}" data-id="${customer.id}" label="${escapeAttr([customer.phone, customer.social].filter(Boolean).join(' · '))}"></option>`).join('');
+}
+function findCustomerByInput(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const n = normalize(raw);
+  const phone = normalizeWhatsapp(raw);
+  return customers.find(c => normalize(c.name || '') === n)
+    || (phone ? customers.find(c => normalizeWhatsapp(c.phone || '') === phone) : null)
+    || customers.find(c => normalize(c.name || '').startsWith(n))
+    || null;
+}
+function handleOrderCustomerInput({ fill = false } = {}) {
+  const match = findCustomerByInput($('#orderCustomerName')?.value || '');
+  if (match && (fill || normalize(match.name || '') === normalize($('#orderCustomerName')?.value || ''))) fillOrderCustomer(match);
+  else if ($('#orderCustomerId')) $('#orderCustomerId').value = '';
 }
 function findCustomerForOrder(order = {}) {
   if (order.customer_id) {
@@ -318,7 +332,7 @@ function findCustomerForOrder(order = {}) {
 }
 function fillOrderCustomer(customer) {
   if (!customer) return;
-  $('#orderCustomerSelect').value = customer.id || '';
+  if ($('#orderCustomerId')) $('#orderCustomerId').value = customer.id || '';
   $('#orderCustomerName').value = customer.name || '';
   $('#orderCustomerPhone').value = customer.phone || '';
   $('#orderCustomerSocial').value = customer.social || '';
@@ -380,7 +394,7 @@ async function deleteClient() {
   await loadCustomers();
 }
 async function upsertCustomerFromOrderPayload(payload) {
-  const selectedId = $('#orderCustomerSelect')?.value || payload.customer_id || '';
+  const selectedId = $('#orderCustomerId')?.value || payload.customer_id || '';
   if (selectedId) {
     const selected = customers.find(c => c.id === selectedId);
     if (selected) return selected.id;
@@ -575,8 +589,8 @@ function openOrderDialog(order = null) {
   $('#orderModalTitle').textContent = order ? `Editar ${order.folio}` : 'Nuevo pedido';
   $('#orderId').value = order?.id || '';
   const matchedCustomer = order ? findCustomerForOrder(order) : null;
-  renderCustomerSelect(matchedCustomer?.id || order?.customer_id || '');
-  $('#orderCustomerSelect').value = matchedCustomer?.id || order?.customer_id || '';
+  renderCustomerSuggestions();
+  $('#orderCustomerId').value = matchedCustomer?.id || order?.customer_id || '';
   $('#orderCustomerName').value = order?.customer_name || matchedCustomer?.name || '';
   $('#orderCustomerPhone').value = order?.customer_phone || matchedCustomer?.phone || '';
   $('#orderCustomerSocial').value = order?.customer_social || matchedCustomer?.social || '';
@@ -603,7 +617,7 @@ async function saveOrder(event) {
   const items = collectOrderItems();
   if (!items.length) { setStatus('#orderFormStatus', 'Agrega al menos un producto.'); return; }
   const payload = {
-    folio: editingOrder?.folio || nextFolio(), customer_id: $('#orderCustomerSelect')?.value || null, customer_name: $('#orderCustomerName').value.trim(), customer_phone: $('#orderCustomerPhone').value.trim(), customer_social: $('#orderCustomerSocial').value.trim(),
+    folio: editingOrder?.folio || nextFolio(), customer_id: $('#orderCustomerId')?.value || null, customer_name: $('#orderCustomerName').value.trim(), customer_phone: $('#orderCustomerPhone').value.trim(), customer_social: $('#orderCustomerSocial').value.trim(),
     status: $('#orderStatus').value, order_date: $('#orderDate').value || today(), order_time: $('#orderTime').value || '', due_date: $('#orderDueDate').value || null, delivery: $('#orderDelivery').value.trim(), discount: Number($('#orderDiscount').value || 0), notes: $('#orderNotes').value.trim(), updated_at: new Date().toISOString()
   };
   let orderId = id;
@@ -700,30 +714,73 @@ async function makeReceiptCanvas(order) {
   const items = order.order_items || [];
   const payments = order.order_payments || [];
   const width = 1080;
-  const height = Math.max(960, 700 + items.length * 46 + Math.max(1,payments.length) * 42);
+  const rowsHeight = items.length * 54 + Math.max(1, payments.length) * 54;
+  const height = Math.max(1120, 1050 + rowsHeight);
   const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext('2d');
   const ink = '#111827', muted = '#475569', line = '#dbe3ee', green = '#16a34a';
+  const moneyText = (n) => money(n).replace(/\s/g, ' ');
+  const drawLine = (y, color=line, w=1) => { ctx.strokeStyle=color; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); };
+  const drawWrapped = (text, x, y, maxWidth, lineHeight) => {
+    const words = String(text || '').split(/\s+/);
+    let lineText = '';
+    for (const word of words) {
+      const test = lineText ? `${lineText} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && lineText) {
+        ctx.fillText(lineText, x, y);
+        y += lineHeight;
+        lineText = word;
+      } else lineText = test;
+    }
+    if (lineText) ctx.fillText(lineText, x, y);
+    return y + lineHeight;
+  };
+
   ctx.fillStyle = '#fff'; ctx.fillRect(0,0,width,height);
   if (settings.logo_url) { try { const img = await loadImage(settings.logo_url); ctx.drawImage(img, 70, 62, 150, 150); } catch { } }
   if (!settings.logo_url) { ctx.fillStyle = ink; ctx.font='bold 90px Arial'; ctx.fillText(brandInitial(), 88, 156); }
-  ctx.fillStyle = muted; ctx.font='32px Arial'; ctx.fillText('Recibo / pedido', 240, 148);
-  ctx.textAlign='right'; ctx.fillStyle=green; ctx.font='700 18px Arial'; ctx.fillText('FOLIO', 1010, 92); ctx.fillStyle=ink; ctx.font='700 34px Arial'; ctx.fillText(order.folio || 'Sin folio', 1010, 132); ctx.fillStyle=muted; ctx.font='24px Arial'; ctx.fillText(`${order.order_date || '—'} · ${order.order_time || '—'}`, 1010, 164); ctx.fillText(`Estado: ${order.status || '—'}`, 1010, 194); ctx.fillStyle=green; ctx.font='700 28px Arial'; ctx.fillText(`Saldo: ${money(t.balance)}`, 1010, 230); ctx.textAlign='left';
-  let y=270; ctx.strokeStyle=ink; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); y+=34;
-  const meta = (x, title, h, lines) => { ctx.fillStyle=green; ctx.font='700 16px Arial'; ctx.fillText(title,x,y); ctx.fillStyle=ink; ctx.font='700 28px Arial'; ctx.fillText(h,x,y+36); ctx.fillStyle=muted; ctx.font='22px Arial'; lines.forEach((l,i)=>ctx.fillText(l,x,y+70+i*28)); };
+  ctx.fillStyle = muted; ctx.font='32px Arial'; ctx.textAlign='left'; ctx.fillText('Recibo / pedido', 240, 148);
+  ctx.textAlign='right'; ctx.fillStyle=green; ctx.font='700 18px Arial'; ctx.fillText('FOLIO', 1010, 92);
+  ctx.fillStyle=ink; ctx.font='700 34px Arial'; ctx.fillText(order.folio || 'Sin folio', 1010, 132);
+  ctx.fillStyle=muted; ctx.font='24px Arial'; ctx.fillText(`${order.order_date || '—'} · ${order.order_time || '—'}`, 1010, 164);
+  ctx.fillText(`Estado: ${order.status || '—'}`, 1010, 194);
+  ctx.fillStyle=green; ctx.font='700 28px Arial'; ctx.fillText(`Saldo: ${moneyText(t.balance)}`, 1010, 230);
+  ctx.textAlign='left';
+
+  let y=270; drawLine(y, ink, 2); y+=34;
+  const meta = (x, title, h, lines) => {
+    ctx.fillStyle=green; ctx.font='700 16px Arial'; ctx.fillText(title,x,y);
+    ctx.fillStyle=ink; ctx.font='700 28px Arial'; ctx.fillText(String(h || '—'),x,y+36);
+    ctx.fillStyle=muted; ctx.font='22px Arial'; lines.forEach((l,i)=>ctx.fillText(String(l || '—'),x,y+70+i*28));
+  };
   meta(86,'CLIENTE', order.customer_name || '—', [`Teléfono: ${order.customer_phone || '—'}`, `Red: ${order.customer_social || '—'}`]);
   meta(560,'ENTREGA', order.delivery || '—', [`Fecha/límite: ${order.due_date || '—'}`, `Estado: ${order.status || '—'}`]);
-  y+=135; ctx.strokeStyle=line; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); y+=34;
-  const header = cols => { ctx.fillStyle=muted; ctx.font='700 18px Arial'; cols.forEach(c=>ctx.fillText(c.label,c.x,y)); y+=18; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); y+=30; };
+  y+=135; drawLine(y); y+=34;
+
+  const header = cols => { ctx.fillStyle=muted; ctx.font='700 18px Arial'; cols.forEach(c=>ctx.fillText(c.label,c.x,y)); y+=18; drawLine(y); y+=30; };
   header([{label:'PRODUCTO',x:86},{label:'VARIANTE',x:560},{label:'CANT.',x:735},{label:'PRECIO',x:825},{label:'TOTAL',x:940}]);
-  ctx.fillStyle=ink; ctx.font='22px Arial'; items.forEach(item=>{ ctx.fillText(item.product_name || 'Producto',86,y); ctx.fillText(item.variant_label || '—',560,y); ctx.fillText(String(item.qty||0),745,y); ctx.fillText(money(item.price),825,y); ctx.fillText(money(toNumber(item.qty)*toNumber(item.price)),940,y); y+=34; ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); y+=18; });
-  ctx.fillStyle=ink; ctx.font='700 30px Arial'; ctx.fillText('Abonos / pagos',64,y); y+=34;
+  ctx.fillStyle=ink; ctx.font='22px Arial';
+  items.forEach(item=>{
+    const productName = String(item.product_name || 'Producto');
+    const maxName = productName.length > 38 ? productName.slice(0, 35) + '...' : productName;
+    ctx.fillText(maxName,86,y); ctx.fillText(item.variant_label || '—',560,y); ctx.fillText(String(item.qty||0),745,y); ctx.fillText(moneyText(item.price),825,y); ctx.fillText(moneyText(toNumber(item.qty)*toNumber(item.price)),940,y);
+    y+=34; drawLine(y); y+=20;
+  });
+  y+=4; ctx.fillStyle=ink; ctx.font='700 30px Arial'; ctx.fillText('Abonos / pagos',64,y); y+=34;
   header([{label:'FECHA',x:86},{label:'HORA',x:260},{label:'MÉTODO / NOTA',x:390},{label:'MONTO',x:904}]);
-  ctx.fillStyle=ink; ctx.font='22px Arial'; if (payments.length) { payments.forEach(p=>{ ctx.fillText(p.payment_date || '—',86,y); ctx.fillText(p.payment_time || '—',260,y); ctx.fillText(p.method || '—',390,y); ctx.fillText(money(p.amount),904,y); y+=34; ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); y+=18; }); } else { ctx.fillStyle=muted; ctx.fillText('Sin abonos registrados',86,y); y+=52; }
-  y+=12; ctx.strokeStyle=ink; ctx.beginPath(); ctx.moveTo(64,y); ctx.lineTo(1016,y); ctx.stroke(); const sy=y;
-  ctx.fillStyle=green; ctx.font='700 16px Arial'; ctx.fillText('MENSAJE',86,sy+34); ctx.fillStyle=ink; ctx.font='22px Arial'; ctx.fillText('Gracias por tu compra. Guarda este recibo para cualquier aclaración.',86,sy+74);
-  const lx=690, vx=1010; const rows=[['Subtotal',money(t.subtotal)],['Descuento',money(t.discount)],['Total del pedido',money(t.total)],['Abonos / anticipos',`− ${money(t.paid)}`]]; rows.forEach((r,i)=>{ const yy=sy+34+i*30; ctx.textAlign='left'; ctx.fillStyle=muted; ctx.font='22px Arial'; ctx.fillText(`${r[0]}:`,lx,yy); ctx.textAlign='right'; ctx.fillStyle=ink; ctx.font='700 22px Arial'; ctx.fillText(r[1],vx,yy); });
-  ctx.textAlign='left'; ctx.fillStyle=green; ctx.font='700 24px Arial'; ctx.fillText('Saldo pendiente',lx,sy+170); ctx.textAlign='right'; ctx.font='700 42px Arial'; ctx.fillText(money(t.balance),vx,sy+170); ctx.textAlign='left';
+  ctx.fillStyle=ink; ctx.font='22px Arial';
+  if (payments.length) {
+    payments.forEach(p=>{ ctx.fillText(p.payment_date || '—',86,y); ctx.fillText(p.payment_time || '—',260,y); ctx.fillText(p.method || '—',390,y); ctx.fillText(moneyText(p.amount),904,y); y+=34; drawLine(y); y+=20; });
+  } else { ctx.fillStyle=muted; ctx.fillText('Sin abonos registrados',86,y); y+=54; }
+
+  y+=16; drawLine(y, ink, 2); const sy=y;
+  ctx.fillStyle=green; ctx.font='700 16px Arial'; ctx.textAlign='left'; ctx.fillText('MENSAJE',86,sy+38);
+  ctx.fillStyle=ink; ctx.font='22px Arial'; drawWrapped('Gracias por tu compra. Guarda este recibo para cualquier aclaración.',86,sy+78,470,28);
+  const lx=675, vx=1010;
+  const rows=[['Subtotal',moneyText(t.subtotal)],['Descuento',moneyText(t.discount)],['Total del pedido',moneyText(t.total)],['Abonos / anticipos',`− ${moneyText(t.paid)}`]];
+  rows.forEach((r,i)=>{ const yy=sy+38+i*34; ctx.textAlign='left'; ctx.fillStyle=muted; ctx.font='22px Arial'; ctx.fillText(`${r[0]}:`,lx,yy); ctx.textAlign='right'; ctx.fillStyle=ink; ctx.font='700 22px Arial'; ctx.fillText(r[1],vx,yy); });
+  ctx.textAlign='left'; ctx.fillStyle=green; ctx.font='700 24px Arial'; ctx.fillText('Saldo pendiente',lx,sy+190);
+  ctx.textAlign='right'; ctx.font='700 42px Arial'; ctx.fillText(moneyText(t.balance),vx,sy+238);
   ctx.fillStyle=muted; ctx.font='18px Arial'; ctx.textAlign='right'; ctx.fillText('PDF como imagen · anti-edición',1010,height-34); ctx.textAlign='left';
   return canvas;
 }
@@ -801,10 +858,9 @@ $('#refreshDashboardBtn').addEventListener('click', async () => { await Promise.
 $('#newOrderBtn').addEventListener('click', () => openOrderDialog());
 $('#newOrderFromDashboardBtn').addEventListener('click', () => { activateTab('orders'); openOrderDialog(); });
 $('#orderForm').addEventListener('submit', saveOrder);
-$('#orderCustomerSelect')?.addEventListener('change', (event) => {
-  const customer = customers.find(c => c.id === event.target.value);
-  if (customer) fillOrderCustomer(customer);
-});
+$('#orderCustomerName')?.addEventListener('input', () => handleOrderCustomerInput({ fill: false }));
+$('#orderCustomerName')?.addEventListener('change', () => handleOrderCustomerInput({ fill: true }));
+$('#orderCustomerName')?.addEventListener('blur', () => handleOrderCustomerInput({ fill: true }));
 $('#addOrderItemBtn').addEventListener('click', () => addOrderItemRow());
 $('#addPaymentBtn').addEventListener('click', () => addPaymentRow({ amount: 0, method: 'Efectivo' }));
 $('#orderDiscount').addEventListener('input', updateOrderPreview);
@@ -842,6 +898,8 @@ document.addEventListener('click', (event) => {
   const deleteWebOrderId = event.target.closest('[data-delete-web-order]')?.dataset.deleteWebOrder;
   if (deleteWebOrderId) deleteWebOrder(deleteWebOrderId);
 });
+
+$$('dialog').forEach(dialog => dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); }));
 
 supabase.auth.onAuthStateChange((_event, session) => { if (!session) showLogin(); });
 requireSession();

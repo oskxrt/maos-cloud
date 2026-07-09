@@ -225,8 +225,8 @@
       <div class="modal-head"><h3 id="orderModalTitle">Nuevo pedido</h3><button type="button" class="icon-btn" data-close="orderDialog">×</button></div>
       <input type="hidden" id="orderId">
       <div class="form-grid">
-        <label class="wide">Cliente registrado<select id="orderCustomerSelect"><option value="">Nuevo cliente / escribir manual</option></select></label>
-        <label>Cliente<input id="orderCustomerName" required placeholder="Nombre del cliente"></label>
+        <input type="hidden" id="orderCustomerId">
+        <label class="wide order-client-autocomplete">Cliente<input id="orderCustomerName" required list="orderCustomersList" autocomplete="off" placeholder="Escribe o selecciona cliente registrado"><datalist id="orderCustomersList"></datalist><span class="field-hint">Al escribir aparecerán los clientes guardados y se llenarán teléfono/red automáticamente.</span></label>
         <label>Teléfono / WhatsApp<input id="orderCustomerPhone" placeholder="311..."></label>
         <label>Red social<input id="orderCustomerSocial" placeholder="Instagram / Facebook"></label>
         <label>Estado<select id="orderStatus"><option>Cotización</option><option>Pendiente</option><option>Apartado</option><option>Pagado</option><option>Entregado</option><option>Cancelado</option></select></label>

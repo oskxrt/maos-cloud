@@ -52,3 +52,14 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Al elegir un cliente registrado, se llenan nombre, teléfono, red social y dirección automáticamente.
 - Los pedidos guardan `customer_id` cuando existe, manteniendo también nombre/teléfono para compatibilidad.
 - Se incluye `PEGAR_EN_SUPABASE_TODO_CORREGIDO_V28.sql` como archivo único para copiar/pegar en Supabase.
+
+
+## v29
+
+- El catálogo ya no abre página individual de producto.
+- Las tarjetas del catálogo solo muestran foto, nombre y precio. Al hacer clic abren **Vista rápida**.
+- El carrusel vive dentro de la Vista rápida para evitar que cambie foto y navegue a otra página.
+- En Nuevo pedido se quitó el selector extra de cliente: ahora el campo Cliente autocompleta clientes registrados.
+- Los diálogos se cierran al hacer clic fuera del cuadro.
+- Se corrigió el recibo/PDF anti-edición para evitar textos encimados.
+- En móvil se centra el logo y los filtros/search quedan contraídos como en desktop.
