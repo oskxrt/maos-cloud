@@ -1589,3 +1589,306 @@ button:active,
   .quick-photo .carousel-btn.next,
   .maos-minimal-v28 .quick-photo .carousel-btn.next { right: 10px; }
 }
+
+
+/* v31 quick-view interface polish: more spacing, visible controls, non-gradient micro-interactions */
+:root {
+  --maos-ease: cubic-bezier(.2,.8,.2,1);
+}
+
+/* remove previous light-sweep effect to keep the interface clean/no gradients */
+.maos-minimal-v28 .minimal-product-photo::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+.quickview-modal {
+  width: min(1240px, calc(100vw - 28px));
+}
+.quickview-modal::backdrop {
+  background: rgba(11, 15, 23, .58);
+  backdrop-filter: blur(9px);
+}
+.quickview-card {
+  width: min(1240px, calc(100vw - 28px));
+  padding: clamp(24px, 2.2vw, 38px) !important;
+  border-radius: 34px;
+  border: 1px solid rgba(17,17,17,.08);
+  box-shadow: 0 36px 100px rgba(0,0,0,.24);
+  overflow: hidden;
+}
+.quickview-card .modal-head {
+  margin-bottom: clamp(18px, 2vw, 28px);
+  align-items: center;
+}
+.quickview-card .modal-head h3 {
+  font-size: clamp(1.35rem, 1.55vw, 1.8rem);
+  letter-spacing: -.04em;
+}
+.quickview-card .icon-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid #e2e2e2;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,.05);
+}
+.quickview-card .icon-btn:hover {
+  transform: rotate(6deg) scale(1.04);
+  border-color: #111;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+}
+
+.quickview-grid {
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+  gap: clamp(28px, 3.2vw, 52px);
+  align-items: stretch;
+}
+.quickview-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: clamp(10px, 1.4vw, 22px) clamp(4px, 1.2vw, 18px) clamp(8px, 1vw, 14px) 0;
+}
+.quickview-info .section-kicker {
+  margin-bottom: 12px;
+  letter-spacing: .42em;
+}
+.quickview-info h2 {
+  margin-bottom: 12px !important;
+  font-size: clamp(2rem, 3.1vw, 3.55rem) !important;
+  line-height: .94;
+}
+.quickview-price {
+  display: block;
+  margin-bottom: clamp(18px, 2vw, 28px) !important;
+  font-size: clamp(1.6rem, 2vw, 2.25rem) !important;
+  letter-spacing: -.04em;
+}
+.quickview-info > p {
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+.quickview-controls {
+  margin: clamp(22px, 2.2vw, 34px) 0 0 !important;
+  padding: clamp(18px, 1.8vw, 26px);
+  border: 1px solid #e8e5df;
+  border-radius: 24px;
+  background: #fbfaf7;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px;
+  gap: 14px;
+}
+.quickview-controls label {
+  font-size: .9rem;
+  font-weight: 900;
+  color: #404859;
+}
+.quickview-controls select,
+.quickview-controls input {
+  margin-top: 9px;
+  min-height: 56px;
+  border-radius: 18px;
+  border: 1px solid #dedede;
+  background: #fff;
+  padding: 0 18px;
+  font-weight: 900;
+  transition: border-color .18s var(--maos-ease), box-shadow .18s var(--maos-ease), transform .18s var(--maos-ease);
+}
+.quickview-controls select:hover,
+.quickview-controls input:hover,
+.quickview-controls select:focus,
+.quickview-controls input:focus {
+  outline: none;
+  border-color: #111;
+  box-shadow: 0 0 0 4px rgba(17,17,17,.06);
+}
+
+.quickview-actions {
+  margin-top: clamp(18px, 1.8vw, 26px) !important;
+  margin-bottom: 0 !important;
+  padding: 0 clamp(2px, .6vw, 10px) clamp(2px, .6vw, 8px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(14px, 1.4vw, 22px) !important;
+}
+.quickview-actions button {
+  position: relative;
+  overflow: hidden;
+  min-height: 64px !important;
+  border-radius: 999px !important;
+  font-size: clamp(1rem, 1.1vw, 1.14rem);
+  isolation: isolate;
+  transition: transform .18s var(--maos-ease), box-shadow .18s var(--maos-ease), border-color .18s var(--maos-ease), background-color .18s var(--maos-ease), color .18s var(--maos-ease) !important;
+}
+.quickview-actions button::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: inherit;
+  border: 1px solid currentColor;
+  opacity: 0;
+  transform: scale(.92);
+  transition: opacity .22s var(--maos-ease), transform .22s var(--maos-ease);
+  pointer-events: none;
+  z-index: -1;
+}
+.quickview-actions button:hover::before {
+  opacity: .22;
+  transform: scale(1);
+}
+.quickview-actions button:hover {
+  transform: translateY(-3px) scale(1.012) !important;
+}
+.quickview-actions button:active {
+  transform: translateY(0) scale(.985) !important;
+}
+.quickview-actions .ghost {
+  background: #fff !important;
+  border: 1px solid #d9d9d9 !important;
+  color: #111 !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.05);
+}
+.quickview-actions .ghost:hover {
+  border-color: #111 !important;
+  box-shadow: 0 18px 34px rgba(0,0,0,.10);
+}
+.quickview-actions .primary {
+  background: #050505 !important;
+  color: #fff !important;
+  border: 1px solid #050505 !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
+}
+.quickview-actions .primary:hover {
+  box-shadow: 0 24px 48px rgba(0,0,0,.24) !important;
+}
+
+.quick-photo {
+  height: min(68vh, 650px) !important;
+  min-height: 420px;
+  border-radius: 0;
+  background: #f5f2ec;
+  overflow: hidden;
+  position: relative;
+}
+.quick-photo img {
+  object-fit: cover;
+}
+.quick-photo .carousel-btn,
+.maos-minimal-v28 .quick-photo .carousel-btn,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn {
+  z-index: 6;
+  width: 56px !important;
+  height: 56px !important;
+  border: 1px solid rgba(17,17,17,.18) !important;
+  background: rgba(255,255,255,.94) !important;
+  color: #111 !important;
+  font-size: 2.2rem !important;
+  font-weight: 650 !important;
+  box-shadow: 0 16px 36px rgba(0,0,0,.18) !important;
+  transform: translateY(-50%) scale(1) !important;
+}
+.quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:hover {
+  background: #111 !important;
+  color: #fff !important;
+  transform: translateY(-50%) scale(1.08) !important;
+}
+.quick-photo .carousel-btn:active,
+.maos-minimal-v28 .quick-photo .carousel-btn:active,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:active {
+  transform: translateY(-50%) scale(.96) !important;
+}
+.quick-photo .carousel-btn.prev,
+.maos-minimal-v28 .quick-photo .carousel-btn.prev { left: 22px !important; }
+.quick-photo .carousel-btn.next,
+.maos-minimal-v28 .quick-photo .carousel-btn.next { right: 22px !important; }
+.quick-photo .quick-dots {
+  bottom: 22px !important;
+  gap: 10px !important;
+}
+.quick-photo .dot {
+  width: 9px !important;
+  height: 9px !important;
+  border: 0 !important;
+  background: rgba(17,17,17,.24) !important;
+  box-shadow: 0 0 0 5px rgba(255,255,255,.58) !important;
+  transition: width .18s var(--maos-ease), background-color .18s var(--maos-ease), transform .18s var(--maos-ease) !important;
+}
+.quick-photo .dot:hover { transform: scale(1.25); }
+.quick-photo .dot.active {
+  width: 30px !important;
+  background: #111 !important;
+}
+
+/* product grid buttons/controls get cleaner tactile feedback too */
+.maos-minimal-v28 .minimal-sitebar button,
+.maos-minimal-v28 .minimal-shop-nav button,
+.maos-minimal-v28 .minimal-shop-controls button,
+.maos-minimal-v28 .minimal-cart-actions button,
+.maos-minimal-v28 .minimal-cart-lines button {
+  position: relative;
+  transition: transform .16s var(--maos-ease), opacity .16s var(--maos-ease), box-shadow .16s var(--maos-ease), border-color .16s var(--maos-ease) !important;
+}
+.maos-minimal-v28 .minimal-sitebar button:hover,
+.maos-minimal-v28 .minimal-shop-controls button:hover,
+.maos-minimal-v28 .minimal-cart-actions button:hover,
+.maos-minimal-v28 .minimal-cart-lines button:hover {
+  transform: translateY(-2px);
+}
+.maos-minimal-v28 .minimal-shop-nav button:hover {
+  transform: translateX(4px);
+}
+.maos-minimal-v28 .minimal-product-card {
+  transition: transform .2s var(--maos-ease), background-color .2s var(--maos-ease) !important;
+}
+.maos-minimal-v28 .minimal-product-card:hover {
+  transform: translateY(-4px) !important;
+}
+
+@media (max-width: 980px) {
+  .quickview-card {
+    padding: 22px !important;
+    border-radius: 28px;
+  }
+  .quickview-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .quickview-info { padding: 0 4px 4px; }
+  .quick-photo { min-height: 360px; height: 50vh !important; }
+}
+@media (max-width: 640px) {
+  .quickview-modal { width: min(100vw - 16px, 620px); }
+  .quickview-card {
+    padding: 18px !important;
+    border-radius: 24px;
+  }
+  .quickview-card .icon-btn { width: 46px; height: 46px; }
+  .quickview-controls {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .quickview-actions {
+    grid-template-columns: 1fr;
+    padding: 0 2px 4px;
+  }
+  .quickview-actions button { min-height: 58px !important; }
+  .quick-photo {
+    min-height: 320px;
+    height: 42vh !important;
+  }
+  .quick-photo .carousel-btn,
+  .maos-minimal-v28 .quick-photo .carousel-btn,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.7rem !important;
+  }
+  .quick-photo .carousel-btn.prev,
+  .maos-minimal-v28 .quick-photo .carousel-btn.prev { left: 12px !important; }
+  .quick-photo .carousel-btn.next,
+  .maos-minimal-v28 .quick-photo .carousel-btn.next { right: 12px !important; }
+}
