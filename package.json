@@ -1,0 +1,9 @@
+{
+  "name": "maos-cloud-v18",
+  "version": "18.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  }
+}

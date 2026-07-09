@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAOS — Disponibles</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="/">
+      <div class="brand-mark">M</div>
+      <div>
+        <h1>MAOS</h1>
+        <p>Disponibles</p>
+      </div>
+    </a>
+    <div class="toolbar">
+      <a class="button ghost" href="admin.html">Panel</a>
+      <a class="button primary" id="shopWhatsapp" target="_blank" rel="noopener">WhatsApp tienda</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <span class="kicker">MAOS SELECT</span>
+        <h2>Productos disponibles</h2>
+        <p class="muted">Catálogo público conectado a Supabase. El panel privado vive en /admin.</p>
+      </div>
+      <div class="toolbar">
+        <input id="searchInput" type="search" placeholder="Buscar producto, talla, color..." />
+        <select id="categoryFilter"><option value="">Todas</option></select>
+      </div>
+    </section>
+
+    <section id="cart" class="cart"></section>
+    <section id="catalogGrid" class="catalog-grid"></section>
+    <p id="catalogStatus" class="status"></p>
+  </main>
+
+  <script src="cloud-config.js"></script>
+  <script type="module" src="public-catalog.js"></script>
+</body>
+</html>

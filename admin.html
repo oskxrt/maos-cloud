@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MAOS — Panel</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <section id="loginView" class="login-shell">
+    <form id="loginForm" class="login-card">
+      <div class="brand">
+        <div class="brand-mark">M</div>
+        <div>
+          <h1>MAOS Panel</h1>
+          <p class="muted">Admin privado con Supabase Auth</p>
+        </div>
+      </div>
+      <label>Email<input id="loginEmail" type="email" required placeholder="tu@email.com"></label>
+      <label>Contraseña<input id="loginPassword" type="password" required placeholder="Contraseña"></label>
+      <button class="primary" type="submit">Entrar</button>
+      <p id="loginStatus" class="status"></p>
+    </form>
+  </section>
+
+  <section id="adminView" class="admin-shell hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">M</div>
+        <div>
+          <h2>MAOS</h2>
+          <p class="muted">Cloud Admin</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <button data-tab="products" class="active">Productos</button>
+        <button data-tab="orders">Pedidos web</button>
+        <button data-tab="settings">Config / import</button>
+        <a class="button ghost" href="index.html" target="_blank">Ver catálogo</a>
+        <button id="logoutBtn">Salir</button>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <section id="productsTab" class="tab">
+        <div class="hero">
+          <div>
+            <span class="kicker">ADMIN</span>
+            <h2>Productos</h2>
+            <p class="muted">Crea productos, variantes, stock y fotos. Todo se refleja en el catálogo público.</p>
+          </div>
+          <button class="ghost" id="refreshBtn">Actualizar</button>
+        </div>
+        <div class="admin-grid">
+          <form id="productForm" class="panel">
+            <h3 id="formTitle">Nuevo producto</h3>
+            <input id="productId" type="hidden">
+            <div class="form-grid">
+              <label>Nombre<input id="productName" required placeholder="Adidas Originals TrackTop Dama"></label>
+              <label>SKU<input id="productSku" placeholder="MAOS-CHA-0001"></label>
+              <label>Categoría<input id="productCategory" placeholder="Chamarra, Tee, Gorra..."></label>
+              <label>Proveedor<input id="productSupplier" placeholder="Jane, TOM..."></label>
+              <label>Costo<input id="productCost" type="number" min="0" step="0.01" value="0"></label>
+              <label>Precio<input id="productPrice" type="number" min="0" step="0.01" value="0"></label>
+              <label>Estado<select id="productStatus"><option>Disponible</option><option>Oculto</option><option>Agotado</option></select></label>
+              <label>Fotos<input id="productImages" type="file" accept="image/*" multiple></label>
+              <label class="wide">Descripción<textarea id="productDescription" placeholder="Detalles visibles para cliente"></textarea></label>
+              <label class="wide">Variantes / stock
+                <textarea id="productVariants" placeholder="Una por línea: S / Negro / 1&#10;M / Negro / 1&#10;XL / Negro / 1"></textarea>
+              </label>
+              <div class="wide preview-list" id="imagePreview"></div>
+            </div>
+            <div class="toolbar" style="margin-top:16px;">
+              <button class="primary" type="submit">Guardar producto</button>
+              <button class="ghost" type="button" id="clearProductBtn">Limpiar</button>
+              <button class="danger" type="button" id="hideProductBtn">Ocultar</button>
+            </div>
+            <p id="productStatusText" class="status"></p>
+          </form>
+
+          <section class="panel">
+            <h3>Productos guardados</h3>
+            <div style="overflow:auto; max-height:720px;">
+              <table class="table">
+                <thead><tr><th>Producto</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="productsTable"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="ordersTab" class="tab hidden">
+        <div class="hero">
+          <div>
+            <span class="kicker">WEB</span>
+            <h2>Pedidos del catálogo</h2>
+            <p class="muted">Los pedidos públicos se guardan aquí además de abrir WhatsApp.</p>
+          </div>
+          <button class="ghost" id="refreshOrdersBtn">Actualizar</button>
+        </div>
+        <section class="panel">
+          <table class="table">
+            <thead><tr><th>Fecha</th><th>Pedido</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody id="ordersTable"></tbody>
+          </table>
+        </section>
+      </section>
+
+      <section id="settingsTab" class="tab hidden">
+        <div class="hero">
+          <div>
+            <span class="kicker">SETUP</span>
+            <h2>Config / importación</h2>
+            <p class="muted">Importa un respaldo JSON de la app local y sube productos a Supabase.</p>
+          </div>
+        </div>
+        <section class="panel">
+          <h3>Importar respaldo local</h3>
+          <p class="muted">Exporta JSON desde la app local, súbelo aquí y se crearán productos, variantes e imágenes.</p>
+          <input id="importJson" type="file" accept="application/json">
+          <button class="primary" id="importBtn" style="margin-top:12px;">Importar productos</button>
+          <p id="importStatus" class="status"></p>
+        </section>
+      </section>
+    </main>
+  </section>
+
+  <script src="cloud-config.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
