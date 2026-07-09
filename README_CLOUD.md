@@ -125,3 +125,40 @@ Esta v18 es cloud-ready y funcional para catálogo + panel básico. La siguiente
 - roles admin más estrictos por correo,
 - dashboard de ventas,
 - actualización automática de stock cuando llega pedido web.
+
+## Actualización v19 — panel completo
+
+Esta versión agrega al panel cloud:
+
+- Dashboard con resumen de productos, pedidos, vendido, abonos y saldos.
+- Control de pedidos interno.
+- Crear y editar pedidos.
+- Agregar productos al pedido.
+- Registrar abonos / anticipos.
+- Recibos con saldo pendiente.
+- Descargar recibo como imagen.
+- PDF anti-edición desde imagen.
+- Compartir recibo por WhatsApp.
+- Identidad de marca: nombre, WhatsApp y logo.
+- Pedidos web convertibles a pedido interno.
+
+### Paso extra para actualizar Supabase
+
+Si ya ejecutaste el esquema v18, ahora entra al SQL Editor y ejecuta:
+
+```text
+supabase-schema-v19.sql
+```
+
+También puedes ejecutar `supabase-schema-full-v19.sql` en proyectos nuevos.
+
+### Importante al subir a GitHub / Vercel
+
+Si tu `cloud-config.js` ya tiene tus llaves reales de Supabase, no lo sobrescribas con el archivo de ejemplo del ZIP, o vuelve a pegar:
+
+```js
+SUPABASE_URL
+SUPABASE_ANON_KEY
+```
+
+Después de subir los archivos a GitHub, Vercel redespliega solo.

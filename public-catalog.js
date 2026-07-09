@@ -8,9 +8,29 @@ const escapeHTML = (v) => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;'
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 let products = [];
 let cart = [];
+let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', logo_url: '', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451' };
 
 const $ = (s, p=document) => p.querySelector(s);
 const $$ = (s, p=document) => [...p.querySelectorAll(s)];
+
+function brandInitial() { return (settings.brand_name || 'M').slice(0,1).toUpperCase(); }
+function renderBrand() {
+  const name = settings.brand_name || cfg.BRAND_NAME || 'MAOS';
+  const mark = document.querySelector('#publicBrandMark');
+  const title = document.querySelector('#publicBrandName');
+  if (title) title.textContent = name;
+  if (mark) mark.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : brandInitial();
+  if ($('#shopWhatsapp')) $('#shopWhatsapp').href = `https://wa.me/${settings.store_whatsapp || cfg.STORE_WHATSAPP}`;
+}
+
+async function loadSettings() {
+  try {
+    const { data } = await supabase.from('app_settings').select('*').eq('id', 'main').maybeSingle();
+    if (data) settings = { ...settings, ...data };
+  } catch (err) { console.warn('Sin settings cloud todavía', err); }
+  renderBrand();
+}
+
 
 function colorNameToHex(name) {
   const key = normalize(name);
@@ -174,7 +194,7 @@ async function loadProducts() {
   render();
 }
 
-$('#shopWhatsapp').href = `https://wa.me/${cfg.STORE_WHATSAPP}`;
+renderBrand();
 $('#searchInput').addEventListener('input', render);
 $('#categoryFilter').addEventListener('change', render);
 
@@ -202,4 +222,5 @@ document.addEventListener('click', async (event) => {
   if (event.target.closest('#sendCart')) { await sendWhatsApp(cart); }
 });
 
+await loadSettings();
 loadProducts();
