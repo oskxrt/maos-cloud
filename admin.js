@@ -243,24 +243,86 @@ function renderAdminOrdersTable() {
 }
 function renderDashboard() {
   if (!$('#dashboardStats')) return;
-  const productCount = products.length;
-  const available = products.filter(p => p.status === 'Disponible').length;
+  const activeOrders = adminOrders.filter(order => order.status !== 'Cancelado');
+  const productCount = products.filter(p => p.status !== 'Oculto').length;
   const stock = products.reduce((s, p) => s + productStock(p), 0);
-  const totals = adminOrders.reduce((acc, order) => {
+  const lowStockItems = products.filter(p => p.status !== 'Oculto' && productStock(p) <= 1);
+  const inventoryCost = products.reduce((s, p) => s + productStock(p) * toNumber(p.cost), 0);
+  const inventoryValue = products.reduce((s, p) => s + productStock(p) * toNumber(p.price), 0);
+  const totals = activeOrders.reduce((acc, order) => {
     const t = calcOrder(order);
-    if (order.status !== 'Cancelado') { acc.total += t.total; acc.paid += t.paid; acc.balance += t.balance; acc.profit += t.profit; }
+    acc.total += t.total; acc.paid += t.paid; acc.balance += t.balance; acc.profit += t.profit;
+    if (['Pendiente', 'Apartado', 'Cotización'].includes(order.status)) acc.pending += 1;
     return acc;
-  }, { total: 0, paid: 0, balance: 0, profit: 0 });
+  }, { total: 0, paid: 0, balance: 0, profit: 0, pending: 0 });
+
   $('#dashboardStats').innerHTML = `
-    <article class="stat-card"><span>Productos</span><strong>${productCount}</strong><small>${available} disponibles · stock ${stock}</small></article>
-    <article class="stat-card"><span>Pedidos</span><strong>${adminOrders.length}</strong><small>${webOrders.length} pedidos web</small></article>
-    <article class="stat-card"><span>Vendido</span><strong>${money(totals.total)}</strong><small>Abonado ${money(totals.paid)}</small></article>
-    <article class="stat-card"><span>Saldo pendiente</span><strong>${money(totals.balance)}</strong><small>Ganancia estimada ${money(totals.profit)}</small></article>`;
-  $('#dashboardOrdersTable').innerHTML = adminOrders.slice(0, 8).map(order => {
+    <article class="stat-card old-style-stat"><span>Ventas</span><strong>${money(totals.total)}</strong><small>Pedidos no cancelados</small></article>
+    <article class="stat-card old-style-stat"><span>Ganancia estimada</span><strong>${money(totals.profit)}</strong><small>Venta - costo - descuento</small></article>
+    <article class="stat-card old-style-stat"><span>Saldo pendiente</span><strong>${money(totals.balance)}</strong><small>Clientes por cobrar</small></article>
+    <article class="stat-card old-style-stat"><span>Pedidos pendientes</span><strong>${totals.pending}</strong><small>Pendiente / apartado</small></article>
+    <article class="stat-card old-style-stat"><span>Productos</span><strong>${productCount}</strong><small>Activos registrados</small></article>
+    <article class="stat-card old-style-stat"><span>Stock bajo</span><strong>${lowStockItems.length}</strong><small>En o bajo mínimo</small></article>
+    <article class="stat-card old-style-stat"><span>Invertido en stock</span><strong>${money(inventoryCost)}</strong><small>Costo x piezas</small></article>
+    <article class="stat-card old-style-stat"><span>Valor de inventario</span><strong>${money(inventoryValue)}</strong><small>Precio venta x piezas</small></article>`;
+
+  const recentOrdersHtml = adminOrders.slice(0, 5).map(order => {
     const t = calcOrder(order);
-    return `<tr><td>${escapeHTML(order.folio)}</td><td>${escapeHTML(order.customer_name || 'Sin cliente')}</td><td><span class="badge">${escapeHTML(order.status || '—')}</span></td><td>${money(t.total)}</td><td>${money(t.paid)}</td><td>${money(t.balance)}</td></tr>`;
-  }).join('') || '<tr><td colspan="6">Sin pedidos todavía.</td></tr>';
+    const overdue = t.balance > 0 && order.due_date && order.due_date < today() && !['Entregado', 'Pagado', 'Cancelado'].includes(order.status);
+    return `<div class="dashboard-line">
+      <div><strong>${escapeHTML(order.folio || 'Sin folio')}</strong><span>${escapeHTML(order.customer_name || 'Sin cliente')} · ${order.order_date || '—'}</span></div>
+      <div class="line-end">${overdue ? '<em class="danger-pill">Atrasado</em>' : `<em>${escapeHTML(order.status || '—')}</em>`}<strong>${money(t.total)}</strong></div>
+    </div>`;
+  }).join('') || '<div class="empty-widget">Sin pedidos todavía.</div>';
+
+  const alertsHtml = lowStockItems.slice(0, 5).map(product => {
+    const variants = productVariants(product).filter(v => Number(v.stock || 0) <= 1);
+    const variantText = variants.length ? variants.slice(0, 3).map(v => `${[v.size, v.color].filter(Boolean).join(' / ') || 'Variante'}: ${v.stock}`).join(' · ') : `Stock ${productStock(product)}`;
+    return `<div class="dashboard-line">
+      <div><strong>${escapeHTML(product.name)}</strong><span>${escapeHTML(product.sku || 'Sin SKU')} · ${escapeHTML(variantText)}${variants.length > 3 ? ' · + más' : ''}</span></div>
+      <div class="line-end"><em class="warn-pill">Stock bajo</em><strong>${productStock(product)}</strong></div>
+    </div>`;
+  }).join('') || '<div class="empty-widget">Sin alertas de inventario.</div>';
+
+  const receivableMap = new Map();
+  activeOrders.forEach(order => {
+    const t = calcOrder(order);
+    if (t.balance <= 0) return;
+    const key = order.customer_name || 'Sin cliente';
+    const current = receivableMap.get(key) || { name: key, phone: order.customer_phone || '', balance: 0, overdue: false };
+    current.balance += t.balance;
+    current.phone = current.phone || order.customer_phone || '';
+    current.overdue = current.overdue || Boolean(order.due_date && order.due_date < today());
+    receivableMap.set(key, current);
+  });
+  const receivables = [...receivableMap.values()].sort((a,b) => b.balance - a.balance);
+  const receivablesHtml = receivables.slice(0, 5).map(client => `<div class="dashboard-line">
+    <div><strong>${escapeHTML(client.name)}</strong><span>${escapeHTML(client.phone || 'Sin teléfono')}</span></div>
+    <div class="line-end">${client.overdue ? '<em class="danger-pill">Atrasado</em>' : '<em>Pendiente</em>'}<strong>${money(client.balance)}</strong></div>
+  </div>`).join('') || '<div class="empty-widget">Sin cuentas por cobrar.</div>';
+
+  const productSales = new Map();
+  activeOrders.forEach(order => (order.order_items || []).forEach(item => {
+    const key = `${item.product_name || 'Producto'} ${item.variant_label || ''}`.trim();
+    const current = productSales.get(key) || { name: key, qty: 0, revenue: 0, profit: 0 };
+    current.qty += toNumber(item.qty);
+    current.revenue += toNumber(item.qty) * toNumber(item.price);
+    current.profit += toNumber(item.qty) * (toNumber(item.price) - toNumber(item.cost));
+    productSales.set(key, current);
+  }));
+  const topProducts = [...productSales.values()].sort((a,b) => b.revenue - a.revenue);
+  const topProductsHtml = topProducts.slice(0, 5).map(item => `<div class="dashboard-line">
+    <div><strong>${escapeHTML(item.name)}</strong><span>${item.qty} piezas vendidas</span></div>
+    <div class="line-end"><strong>${money(item.revenue)}</strong><span>gan. ${money(item.profit)}</span></div>
+  </div>`).join('') || '<div class="empty-widget">Sin ventas todavía.</div>';
+
+  if ($('#dashboardWidgets')) $('#dashboardWidgets').innerHTML = `
+    <section class="panel dashboard-panel"><div class="panel-head-inline"><h3>Pedidos recientes</h3><button class="ghost small" data-tab="orders">Ver todos</button></div><div class="widget-list">${recentOrdersHtml}</div></section>
+    <section class="panel dashboard-panel"><div class="panel-head-inline"><h3>Alertas de inventario</h3><button class="ghost small" data-tab="products">Revisar</button></div><div class="widget-list">${alertsHtml}</div></section>
+    <section class="panel dashboard-panel"><div class="panel-head-inline"><h3>Cuentas por cobrar</h3><button class="ghost small" data-tab="orders">Pedidos</button></div><div class="widget-list">${receivablesHtml}</div></section>
+    <section class="panel dashboard-panel"><div class="panel-head-inline"><h3>Productos más vendidos</h3><button class="ghost small" data-tab="products">Productos</button></div><div class="widget-list">${topProductsHtml}</div></section>`;
 }
+
 
 function addOrderItemRow(item = {}) {
   const row = document.createElement('div');

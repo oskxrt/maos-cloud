@@ -162,3 +162,10 @@ SUPABASE_ANON_KEY
 ```
 
 Después de subir los archivos a GitHub, Vercel redespliega solo.
+
+## v20
+
+- Se restauró el estilo del dashboard anterior tipo **MAOS Control**.
+- Nuevo resumen con 8 métricas: ventas, ganancia, saldo, pedidos pendientes, productos, stock bajo, invertido y valor de inventario.
+- Nuevos módulos del resumen: pedidos recientes, alertas de inventario, cuentas por cobrar y productos más vendidos.
+- Menú lateral oscuro más parecido a la app local original.

@@ -28,42 +28,36 @@
       <div class="brand">
         <div class="brand-mark" id="sidebarBrandMark">M</div>
         <div>
-          <h2 id="sidebarBrandName">MAOS</h2>
-          <p class="muted">Cloud Admin</p>
+          <h2 id="sidebarBrandName">MAOS Control</h2>
+          <p class="muted">Inventario · Clientes · Pedidos · Abonos</p>
         </div>
       </div>
       <nav class="nav">
-        <button data-tab="dashboard" class="active">Dashboard</button>
+        <button data-tab="dashboard" class="active">Resumen</button>
         <button data-tab="products">Productos</button>
-        <button data-tab="orders">Control de pedidos</button>
+        <button data-tab="orders">Pedidos</button>
         <button data-tab="webOrders">Pedidos web</button>
-        <button data-tab="settings">Logo / importación</button>
+        <button data-tab="settings">Respaldo / Identidad</button>
         <a class="button ghost" href="index.html" target="_blank">Ver catálogo</a>
         <button id="logoutBtn">Salir</button>
       </nav>
     </aside>
 
     <main class="admin-main">
-      <section id="dashboardTab" class="tab">
-        <div class="hero">
+      <section id="dashboardTab" class="tab dashboard-pro">
+        <div class="hero dashboard-hero">
           <div>
-            <span class="kicker">RESUMEN</span>
-            <h2>Dashboard</h2>
-            <p class="muted">Vista rápida de inventario, pedidos, abonos y saldos.</p>
+            <span class="kicker">PANEL DE CONTROL</span>
+            <h2>Resumen</h2>
+            <p class="muted">Inventario, clientes, pedidos, abonos y cuentas por cobrar.</p>
           </div>
-          <div class="toolbar"><button class="ghost" id="refreshDashboardBtn">Actualizar</button></div>
+          <div class="toolbar">
+            <button class="ghost" id="refreshDashboardBtn">Actualizar</button>
+            <button class="primary" id="newOrderFromDashboardBtn">Nuevo pedido</button>
+          </div>
         </div>
-        <div class="stats-grid" id="dashboardStats"></div>
-        <section class="panel">
-          <div class="panel-head-inline">
-            <div><h3>Pedidos recientes</h3><p class="muted">Últimos pedidos capturados en el panel.</p></div>
-            <button class="primary small" id="newOrderFromDashboardBtn">Nuevo pedido</button>
-          </div>
-          <table class="table">
-            <thead><tr><th>Folio</th><th>Cliente</th><th>Estado</th><th>Total</th><th>Abonos</th><th>Saldo</th></tr></thead>
-            <tbody id="dashboardOrdersTable"></tbody>
-          </table>
-        </section>
+        <div class="stats-grid dashboard-stats" id="dashboardStats"></div>
+        <div class="dashboard-widgets" id="dashboardWidgets"></div>
       </section>
 
       <section id="productsTab" class="tab hidden">
