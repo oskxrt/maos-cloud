@@ -2,12 +2,13 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const cfg = window.MAOS_CONFIG || {};
 const money = (n) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: cfg.CURRENCY || 'MXN' }).format(Number(n || 0));
-const normalize = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const normalize = (text) => String(text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 const escapeHTML = (v) => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
 const supabase = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 let products = [];
 let cart = [];
+let selectedCategory = '';
 let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', logo_url: '', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451' };
 
 const $ = (s, p=document) => p.querySelector(s);
@@ -16,11 +17,14 @@ const $$ = (s, p=document) => [...p.querySelectorAll(s)];
 function brandInitial() { return (settings.brand_name || 'M').slice(0,1).toUpperCase(); }
 function renderBrand() {
   const name = settings.brand_name || cfg.BRAND_NAME || 'MAOS';
-  const mark = document.querySelector('#publicBrandMark');
-  const title = document.querySelector('#publicBrandName');
-  if (title) title.textContent = name;
-  if (mark) mark.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : brandInitial();
-  if ($('#shopWhatsapp')) $('#shopWhatsapp').href = `https://wa.me/${settings.store_whatsapp || cfg.STORE_WHATSAPP}`;
+  const logoWrap = $('#publicBrandLogo');
+  const wordmark = $('#publicBrandWordmark');
+  if (wordmark) wordmark.textContent = name;
+  if (logoWrap) {
+    logoWrap.innerHTML = settings.logo_url ? `<img src="${settings.logo_url}" alt="Logo ${escapeHTML(name)}">` : `<span>${escapeHTML(name)}</span>`;
+  }
+  const wa = settings.store_whatsapp || cfg.STORE_WHATSAPP;
+  if ($('#shopWhatsappTop')) $('#shopWhatsappTop').href = `https://wa.me/${wa}`;
 }
 
 async function loadSettings() {
@@ -30,7 +34,6 @@ async function loadSettings() {
   } catch (err) { console.warn('Sin settings cloud todavía', err); }
   renderBrand();
 }
-
 
 function colorNameToHex(name) {
   const key = normalize(name);
@@ -65,7 +68,7 @@ function carousel(product) {
   const imgs = productImages(product);
   if (!imgs.length) return '<div class="catalog-photo"><div class="empty">Sin foto</div></div>';
   const slides = imgs.map((url, i) => `<div class="slide ${i === 0 ? 'active' : ''}"><img src="${url}" alt="${escapeHTML(product.name)} ${i+1}"></div>`).join('');
-  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}" type="button">‹</button><button class="carousel-btn next" data-next="${product.id}" type="button">›</button><div class="dots">${imgs.map((_, i) => `<button class="dot ${i === 0 ? 'active' : ''}" data-dot="${product.id}:${i}" type="button"></button>`).join('')}</div><span class="photo-count">1/${imgs.length}</span>` : '';
+  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}" type="button">‹</button><button class="carousel-btn next" data-next="${product.id}" type="button">›</button><div class="dots">${imgs.map((_, i) => `<button class="dot ${i === 0 ? 'active' : ''}" data-dot="${product.id}:${i}" type="button"></button>`).join('')}</div>` : '';
   return `<div class="catalog-photo" data-carousel="${product.id}" data-index="0" data-count="${imgs.length}">${slides}${controls}</div>`;
 }
 
@@ -78,8 +81,6 @@ function setCarousel(productId, index) {
   el.dataset.index = String(index);
   $$('.slide', el).forEach((slide, i) => slide.classList.toggle('active', i === index));
   $$('.dot', el).forEach((dot, i) => dot.classList.toggle('active', i === index));
-  const counter = $('.photo-count', el);
-  if (counter) counter.textContent = `${index + 1}/${count}`;
 }
 
 function variantSelect(product) {
@@ -91,9 +92,8 @@ function variantSelect(product) {
 function card(product) {
   const variants = productVariants(product).filter(v => Number(v.stock || 0) > 0);
   const colors = productColors(product);
-  const subtitle = colors[0] || product.category || 'Streetwear';
+  const subtitle = product.category || colors[0] || 'Streetwear';
   const swatches = colors.length ? `<div class="color-row"><div class="color-dots">${colors.slice(0,4).map(c => `<span class="color-dot" style="--swatch:${colorNameToHex(c)}" title="${escapeHTML(c)}"></span>`).join('')}</div><span>${colors.length} ${colors.length === 1 ? 'color' : 'colores'}</span></div>` : '';
-  const availability = variants.length ? variants.map(v => `${[v.size, v.color].filter(Boolean).join(' / ')} (${v.stock})`).join(' · ') : (product.variants_text || 'Disponible');
   return `<article class="catalog-card" data-card="${product.id}">
     ${carousel(product)}
     <div class="card-body">
@@ -101,7 +101,6 @@ function card(product) {
       <p class="subtitle">${escapeHTML(subtitle)}</p>
       ${swatches}
       ${product.description ? `<p class="description">${escapeHTML(product.description)}</p>` : ''}
-      <p class="availability">Disponible: ${escapeHTML(availability)}</p>
       <div class="order-controls"><label>Variante${variantSelect(product)}</label><label>Cant.<input class="qty" type="number" min="1" step="1" value="1"></label></div>
       <div class="card-actions"><button class="ghost small" data-add="${product.id}" type="button">Agregar</button><button class="primary small" data-order="${product.id}" type="button">Pedir por WhatsApp</button></div>
     </div>
@@ -110,15 +109,15 @@ function card(product) {
 
 function getSelection(productId) {
   const product = products.find(p => p.id === productId);
-  const card = document.querySelector(`[data-card="${productId}"]`);
-  const qty = Math.max(1, Number($('.qty', card)?.value || 1));
+  const cardEl = document.querySelector(`[data-card="${productId}"]`);
+  const qty = Math.max(1, Number($('.qty', cardEl)?.value || 1));
   let variant = '';
-  const select = $('.variant-select', card);
+  const select = $('.variant-select', cardEl);
   if (select) {
     const v = productVariants(product).find(x => x.id === select.value);
     variant = v ? [v.size, v.color].filter(Boolean).join(' / ') : select.selectedOptions[0]?.textContent || '';
   } else {
-    variant = $('.variant-text', card)?.value || product.variants_text || '';
+    variant = $('.variant-text', cardEl)?.value || product.variants_text || '';
   }
   return { product, qty, variant };
 }
@@ -164,15 +163,44 @@ function whatsappMessage(items, total = null) {
 async function sendWhatsApp(items) {
   const total = items.reduce((s, item) => s + Number(item.price || 0) * Number(item.qty || 0), 0);
   await saveWebOrder(items);
-  const url = `https://wa.me/${cfg.STORE_WHATSAPP}?text=${encodeURIComponent(whatsappMessage(items, total))}`;
+  const wa = settings.store_whatsapp || cfg.STORE_WHATSAPP;
+  const url = `https://wa.me/${wa}?text=${encodeURIComponent(whatsappMessage(items, total))}`;
   window.open(url, '_blank');
 }
 
-function render() {
+function populateCategories() {
+  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+  $('#categoryFilter').innerHTML = '<option value="">Todas</option>' + cats.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+  const nav = $('#categoryNav');
+  nav.innerHTML = cats.map(c => `<button class="catalog-side-link" data-side-category="${escapeHTML(c)}">${escapeHTML(c)}</button>`).join('');
+}
+
+function updateCategoryUI() {
+  $('#categoryFilter').value = selectedCategory;
+  $$('.catalog-side-link').forEach(btn => {
+    const active = (btn.dataset.sideCategory || '') === selectedCategory;
+    btn.classList.toggle('active', active);
+  });
+  const label = selectedCategory || 'TODOS LOS PRODUCTOS';
+  if ($('#activeCategoryLabel')) $('#activeCategoryLabel').textContent = label.toUpperCase();
+  if ($('#catalogTitle')) $('#catalogTitle').textContent = selectedCategory ? `${selectedCategory}` : 'Todos los productos';
+}
+
+function filteredProducts() {
   const search = normalize($('#searchInput').value);
-  const category = $('#categoryFilter').value;
-  const filtered = products.filter(p => (!category || p.category === category) && (!search || normalize([p.name, p.sku, p.category, p.description, p.variants_text, ...(p.product_variants || []).map(v => `${v.size} ${v.color}`)].join(' ')).includes(search)));
+  return products.filter(p => (!selectedCategory || p.category === selectedCategory) && (!search || normalize([p.name, p.sku, p.category, p.description, p.variants_text, ...(p.product_variants || []).map(v => `${v.size} ${v.color}`)].join(' ')).includes(search)));
+}
+
+function renderFeatured() {
+  const featured = products.slice(0, 4);
+  $('#featuredGrid').innerHTML = featured.length ? featured.map(card).join('') : '<div class="empty">No hay novedades todavía.</div>';
+}
+
+function render() {
+  const filtered = filteredProducts();
   $('#catalogGrid').innerHTML = filtered.length ? filtered.map(card).join('') : '<div class="empty">No hay productos disponibles.</div>';
+  renderFeatured();
+  updateCategoryUI();
   renderCart();
 }
 
@@ -188,17 +216,22 @@ async function loadProducts() {
     return;
   }
   products = data || [];
-  const cats = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
-  $('#categoryFilter').innerHTML = '<option value="">Todas</option>' + cats.map(c => `<option>${escapeHTML(c)}</option>`).join('');
+  populateCategories();
   $('#catalogStatus').textContent = '';
   render();
 }
 
 renderBrand();
 $('#searchInput').addEventListener('input', render);
-$('#categoryFilter').addEventListener('change', render);
+$('#categoryFilter').addEventListener('change', (e) => { selectedCategory = e.target.value; render(); });
+$('#scrollCartBtn').addEventListener('click', () => $('#cart')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 
 document.addEventListener('click', async (event) => {
+  const categoryBtn = event.target.closest('[data-side-category]');
+  if (categoryBtn) {
+    selectedCategory = categoryBtn.dataset.sideCategory || '';
+    render();
+  }
   const prev = event.target.closest('[data-prev]')?.dataset.prev;
   if (prev) setCarousel(prev, Number(document.querySelector(`[data-carousel="${prev}"]`)?.dataset.index || 0) - 1);
   const next = event.target.closest('[data-next]')?.dataset.next;

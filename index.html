@@ -6,38 +6,69 @@
   <title>MAOS — Disponibles</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <header class="header">
-    <a class="brand" href="/">
-      <div class="brand-mark" id="publicBrandMark">M</div>
-      <div>
-        <h1 id="publicBrandName">MAOS</h1>
-        <p>Disponibles</p>
-      </div>
-    </a>
-    <div class="toolbar">
-      <a class="button ghost" href="admin.html">Panel</a>
-      <a class="button primary" id="shopWhatsapp" target="_blank" rel="noopener">WhatsApp tienda</a>
-    </div>
-  </header>
+<body class="catalog-page">
+  <div class="catalog-announcement">
+    <span>NOVEDADES STREETWEAR DISPONIBLES · PEDIDO DIRECTO POR WHATSAPP</span>
+    <a id="shopWhatsappTop" target="_blank" rel="noopener">WHATSAPP TIENDA</a>
+  </div>
 
-  <main class="wrap">
-    <section class="hero">
-      <div>
-        <span class="kicker">MAOS SELECT</span>
-        <h2>Productos disponibles</h2>
-        <p class="muted">Catálogo público conectado a Supabase. Productos listos para pedir por WhatsApp.</p>
-      </div>
-      <div class="toolbar">
-        <input id="searchInput" type="search" placeholder="Buscar producto, talla, color..." />
-        <select id="categoryFilter"><option value="">Todas</option></select>
-      </div>
-    </section>
+  <div class="catalog-layout-shell">
+    <aside class="catalog-sidebar-nav">
+      <a class="catalog-brand-large" href="/">
+        <div class="catalog-brand-logo" id="publicBrandLogo">MAOS</div>
+        <div class="catalog-brand-wordmark" id="publicBrandWordmark">MAOS</div>
+      </a>
 
-    <section id="cart" class="cart"></section>
-    <section id="catalogGrid" class="catalog-grid"></section>
-    <p id="catalogStatus" class="status"></p>
-  </main>
+      <nav class="catalog-side-links">
+        <button class="catalog-side-link active" data-side-category="">NOVEDADES</button>
+        <div id="categoryNav"></div>
+      </nav>
+
+      <div class="catalog-side-footer">
+        <p>Catálogo público</p>
+        <small>Streetwear select · pedidos por WhatsApp</small>
+      </div>
+    </aside>
+
+    <main class="catalog-main-wrap">
+      <header class="catalog-topbar">
+        <div class="catalog-topbar-left">
+          <strong>FILTER</strong>
+          <span id="activeCategoryLabel">TODOS LOS PRODUCTOS</span>
+        </div>
+        <div class="catalog-topbar-right toolbar">
+          <input id="searchInput" type="search" placeholder="Buscar producto, talla, color..." />
+          <select id="categoryFilter"><option value="">Todas</option></select>
+          <a class="button ghost" href="admin.html">Panel</a>
+          <button class="button primary" type="button" id="scrollCartBtn">Carrito</button>
+        </div>
+      </header>
+
+      <section id="cart" class="cart catalog-cart"></section>
+
+      <section class="catalog-section">
+        <div class="catalog-section-head">
+          <div>
+            <span class="section-kicker">MAOS SELECT</span>
+            <h2>Novedades</h2>
+          </div>
+          <p class="muted">Lo más nuevo y destacado del catálogo.</p>
+        </div>
+        <section id="featuredGrid" class="catalog-grid featured-grid"></section>
+      </section>
+
+      <section class="catalog-section">
+        <div class="catalog-section-head">
+          <div>
+            <span class="section-kicker">CATÁLOGO</span>
+            <h2 id="catalogTitle">Todos los productos</h2>
+          </div>
+          <p id="catalogStatus" class="status"></p>
+        </div>
+        <section id="catalogGrid" class="catalog-grid"></section>
+      </section>
+    </main>
+  </div>
 
   <script src="cloud-config.js"></script>
   <script type="module" src="public-catalog.js"></script>

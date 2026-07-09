@@ -169,3 +169,11 @@ Después de subir los archivos a GitHub, Vercel redespliega solo.
 - Nuevo resumen con 8 métricas: ventas, ganancia, saldo, pedidos pendientes, productos, stock bajo, invertido y valor de inventario.
 - Nuevos módulos del resumen: pedidos recientes, alertas de inventario, cuentas por cobrar y productos más vendidos.
 - Menú lateral oscuro más parecido a la app local original.
+
+
+## v21
+
+- Rediseño del catálogo público con inspiración en tiendas streetwear minimalistas.
+- Logo más grande y sin contenedor redondo.
+- Categorías visibles al lado izquierdo.
+- Nueva sección de **Novedades** al inicio del catálogo.
