@@ -108,3 +108,11 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Botón **Editar** abre la misma ventana con los datos cargados.
 - Agregado buscador de productos por nombre, SKU, categoría, proveedor o estado.
 - Se mantienen URLs de imágenes externas y subida de archivos.
+
+
+## v37
+
+- Corrección visual del carrusel en Vista rápida.
+- Flechas alineadas al centro vertical real del carrusel.
+- Imagen con margen interno y centrado más estable dentro del modal.
+- Dots separados de la foto para evitar que tapen el producto.
