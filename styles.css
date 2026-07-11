@@ -2438,3 +2438,74 @@ body.quickview-scroll-lock {
   .product-list-head { flex-direction: column; align-items: stretch; }
   #productSearch { width: 100%; }
 }
+
+/* v36 - image centering polish */
+.catalog-photo,
+.minimal-product-photo,
+.maos-minimal-v28 .minimal-product-photo,
+.quick-photo,
+.product-gallery-main,
+.admin-thumb,
+.preview-list,
+.logo-preview {
+  display: grid !important;
+  place-items: center !important;
+}
+
+.catalog-photo .slide,
+.minimal-product-photo .slide,
+.maos-minimal-v28 .minimal-product-photo .slide,
+.quick-photo .slide {
+  width: 100% !important;
+  height: 100% !important;
+  place-items: center !important;
+}
+
+.catalog-photo .slide.active,
+.minimal-product-photo .slide.active,
+.maos-minimal-v28 .minimal-product-photo .slide.active,
+.quick-photo .slide.active {
+  display: grid !important;
+}
+
+.catalog-photo img,
+.minimal-product-photo img,
+.maos-minimal-v28 .minimal-product-photo img,
+.quick-photo img,
+.product-gallery-main img,
+.logo-preview img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  display: block !important;
+  margin: auto !important;
+}
+
+.quick-photo img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.admin-thumb img,
+.preview-list img,
+.product-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+}
+
+.maos-minimal-v28 .minimal-product-card:hover .minimal-product-photo img,
+.card-link-wrap:hover img {
+  transform-origin: center center !important;
+}
+
+@media (max-width: 720px) {
+  .quick-photo,
+  .maos-minimal-v28 .quick-photo {
+    min-height: 320px !important;
+    height: 52vh !important;
+  }
+}
