@@ -78,8 +78,8 @@ function firstPhoto(product) {
 function carousel(product, mode='quick') {
   const imgs = productImages(product);
   if (!imgs.length) return `<div class="minimal-product-photo quick-photo"><div class="minimal-no-photo">Sin foto</div></div>`;
-  const slides = imgs.map((url, i) => `<div class="slide ${i === 0 ? 'active' : ''}"><img src="${url}" alt="${escapeHTML(product.name)} ${i+1}"></div>`).join('');
-  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}:${mode}" type="button">‹</button><button class="carousel-btn next" data-next="${product.id}:${mode}" type="button">›</button><div class="quick-dots">${imgs.map((_, i) => `<button class="dot ${i===0?'active':''}" data-dot="${product.id}:${i}:${mode}" type="button"></button>`).join('')}</div>` : '';
+  const slides = imgs.map((url, i) => `<div class="slide ${i === 0 ? 'active' : ''}"><img src="${url}" alt="${escapeHTML(product.name)} ${i+1}" draggable="false" loading="lazy" decoding="async"></div>`).join('');
+  const controls = imgs.length > 1 ? `<button class="carousel-btn prev" data-prev="${product.id}:${mode}" type="button" aria-label="Foto anterior"></button><button class="carousel-btn next" data-next="${product.id}:${mode}" type="button" aria-label="Foto siguiente"></button><div class="quick-dots">${imgs.map((_, i) => `<button class="dot ${i===0?'active':''}" data-dot="${product.id}:${i}:${mode}" type="button" aria-label="Ver foto ${i + 1}"></button>`).join('')}</div>` : '';
   return `<div class="minimal-product-photo quick-photo" data-carousel="${product.id}:${mode}" data-index="0" data-count="${imgs.length}">${slides}${controls}</div>`;
 }
 
@@ -245,6 +245,14 @@ async function loadProducts() {
     hideCatalogLoader();
   }
 }
+
+
+// Avoid accidental text/image selection while using the carousel controls.
+document.addEventListener('pointerdown', (event) => {
+  if (event.target.closest?.('.quick-photo .carousel-btn, .quick-photo .dot')) {
+    event.preventDefault();
+  }
+});
 
 document.addEventListener('click', async (event) => {
   const categoryBtn = event.target.closest('[data-side-category]');

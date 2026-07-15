@@ -2717,3 +2717,176 @@ body.quickview-scroll-lock {
     transform: none !important;
   }
 }
+
+
+/* v39 - quick view carousel: visual centering + no text selection */
+.quickview-modal,
+.quickview-card,
+.quick-photo,
+.quick-photo *,
+.maos-minimal-v28 .quick-photo,
+.maos-minimal-v28 .quick-photo * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.quick-photo,
+.maos-minimal-v28 .quick-photo,
+.maos-minimal-v28 .minimal-product-photo.quick-photo {
+  --maos-product-zoom: 1.28;
+  --maos-product-y: -5%;
+  --maos-product-x: 0%;
+  position: relative !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #f6f5f2 !important;
+}
+
+.quick-photo .slide,
+.maos-minimal-v28 .quick-photo .slide,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .slide {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  display: none !important;
+  place-items: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.quick-photo .slide.active,
+.maos-minimal-v28 .quick-photo .slide.active,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .slide.active {
+  display: grid !important;
+}
+
+.quick-photo img,
+.maos-minimal-v28 .quick-photo img,
+.maos-minimal-v28 .minimal-product-photo.quick-photo img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  transform: translate(var(--maos-product-x), var(--maos-product-y)) scale(var(--maos-product-zoom)) !important;
+  transform-origin: center center !important;
+  pointer-events: none !important;
+  -webkit-user-drag: none !important;
+  user-select: none !important;
+  margin: 0 !important;
+}
+
+.quick-photo .carousel-btn,
+.maos-minimal-v28 .quick-photo .carousel-btn,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn {
+  position: absolute !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 54px !important;
+  height: 54px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(17, 24, 39, .12) !important;
+  background: rgba(255, 255, 255, .94) !important;
+  color: #0b0d12 !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,.10) !important;
+  z-index: 50 !important;
+  display: grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transform: translateY(-50%) !important;
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease !important;
+  outline: none !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  text-indent: 0 !important;
+  caret-color: transparent !important;
+}
+
+.quick-photo .carousel-btn::before,
+.maos-minimal-v28 .quick-photo .carousel-btn::before,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn::before {
+  display: block !important;
+  font-size: 34px !important;
+  font-weight: 900 !important;
+  line-height: .8 !important;
+  color: currentColor !important;
+  transform: translateY(-1px) !important;
+  user-select: none !important;
+  pointer-events: none !important;
+}
+.quick-photo .carousel-btn.prev::before,
+.maos-minimal-v28 .quick-photo .carousel-btn.prev::before,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.prev::before { content: "‹" !important; }
+.quick-photo .carousel-btn.next::before,
+.maos-minimal-v28 .quick-photo .carousel-btn.next::before,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.next::before { content: "›" !important; }
+
+.quick-photo .carousel-btn.prev,
+.maos-minimal-v28 .quick-photo .carousel-btn.prev,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.prev { left: 24px !important; }
+.quick-photo .carousel-btn.next,
+.maos-minimal-v28 .quick-photo .carousel-btn.next,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.next { right: 24px !important; }
+
+.quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:hover {
+  background: #0b0d12 !important;
+  color: #fff !important;
+  transform: translateY(-50%) scale(1.06) !important;
+  box-shadow: 0 26px 56px rgba(0,0,0,.18) !important;
+}
+.quick-photo .carousel-btn:active,
+.maos-minimal-v28 .quick-photo .carousel-btn:active,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:active {
+  transform: translateY(-50%) scale(.94) !important;
+}
+.quick-photo .carousel-btn:focus,
+.maos-minimal-v28 .quick-photo .carousel-btn:focus,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:focus {
+  outline: none !important;
+}
+.quick-photo .carousel-btn:focus-visible,
+.maos-minimal-v28 .quick-photo .carousel-btn:focus-visible,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:focus-visible {
+  outline: 2px solid #0b0d12 !important;
+  outline-offset: 3px !important;
+}
+
+.quick-photo .quick-dots,
+.maos-minimal-v28 .quick-photo .quick-dots,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .quick-dots {
+  bottom: 26px !important;
+  z-index: 55 !important;
+  background: rgba(255,255,255,.72) !important;
+  border: 1px solid rgba(17,24,39,.06) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.08) !important;
+}
+
+@media (max-width: 900px) {
+  .quick-photo,
+  .maos-minimal-v28 .quick-photo,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo {
+    --maos-product-zoom: 1.18;
+    --maos-product-y: -3%;
+  }
+  .quick-photo .carousel-btn,
+  .maos-minimal-v28 .quick-photo .carousel-btn,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  .quick-photo .carousel-btn.prev,
+  .maos-minimal-v28 .quick-photo .carousel-btn.prev,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.prev { left: 14px !important; }
+  .quick-photo .carousel-btn.next,
+  .maos-minimal-v28 .quick-photo .carousel-btn.next,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn.next { right: 14px !important; }
+}

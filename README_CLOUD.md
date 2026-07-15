@@ -122,3 +122,11 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Ajuste de encuadre visual en Vista rápida.
 - Las fotos del modal ahora usan `object-fit: cover` para compensar imágenes con mucho lienzo blanco.
 - Flechas y dots quedan alineados al centro real del carrusel.
+
+
+## v39
+
+- Corrección más fuerte de centrado visual en la imagen de Vista rápida.
+- Se eliminó la posibilidad de seleccionar el texto de las flechas del carrusel.
+- Las flechas ahora se renderizan con CSS, no como texto seleccionable.
+- El producto se muestra con un zoom sutil para compensar fotos con mucho lienzo blanco.
