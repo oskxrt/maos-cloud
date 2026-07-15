@@ -2643,3 +2643,77 @@ body.quickview-scroll-lock {
     transform: translateY(-1%) !important;
   }
 }
+
+/* v38 - visual crop center for quick view images
+   The source photos often include extra blank canvas; cover centers the visible product better than contain. */
+.quick-photo,
+.maos-minimal-v28 .quick-photo,
+.maos-minimal-v28 .minimal-product-photo.quick-photo {
+  background: #f6f5f2 !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+}
+
+.quick-photo .slide,
+.maos-minimal-v28 .quick-photo .slide,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .slide {
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  place-items: center !important;
+  overflow: hidden !important;
+}
+
+.quick-photo img,
+.maos-minimal-v28 .quick-photo img,
+.maos-minimal-v28 .minimal-product-photo.quick-photo img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+  object-position: 50% 50% !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+.quick-photo .carousel-btn,
+.maos-minimal-v28 .quick-photo .carousel-btn,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .quick-photo .carousel-btn:hover,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:hover {
+  transform: translateY(-50%) scale(1.06) !important;
+}
+
+.quick-photo .carousel-btn:active,
+.maos-minimal-v28 .quick-photo .carousel-btn:active,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .carousel-btn:active {
+  transform: translateY(-50%) scale(.94) !important;
+}
+
+.quick-photo .quick-dots,
+.maos-minimal-v28 .quick-photo .quick-dots,
+.maos-minimal-v28 .minimal-product-photo.quick-photo .quick-dots {
+  bottom: 22px !important;
+  padding: 8px 12px !important;
+  border-radius: 999px !important;
+  width: max-content !important;
+  margin: 0 auto !important;
+  background: rgba(255,255,255,.54) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+@media (max-width: 640px) {
+  .quick-photo img,
+  .maos-minimal-v28 .quick-photo img,
+  .maos-minimal-v28 .minimal-product-photo.quick-photo img {
+    object-fit: cover !important;
+    object-position: 50% 50% !important;
+    transform: none !important;
+  }
+}

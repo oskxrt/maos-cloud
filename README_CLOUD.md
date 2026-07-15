@@ -116,3 +116,9 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Flechas alineadas al centro vertical real del carrusel.
 - Imagen con margen interno y centrado más estable dentro del modal.
 - Dots separados de la foto para evitar que tapen el producto.
+
+## v38
+
+- Ajuste de encuadre visual en Vista rápida.
+- Las fotos del modal ahora usan `object-fit: cover` para compensar imágenes con mucho lienzo blanco.
+- Flechas y dots quedan alineados al centro real del carrusel.
