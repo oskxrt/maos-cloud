@@ -3,38 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MAOS — Catálogo</title>
+  <title>Catálogo</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="catalog-page maos-minimal-v28 catalog-is-loading">
+<body class="catalog-page maos-minimal-v28 white-label-store catalog-is-loading">
   <div id="catalogLoader" class="catalog-loader is-active" aria-live="polite" aria-label="Cargando catálogo">
     <div class="catalog-loader-card">
-      <div class="loader-brand" id="loaderBrand">MAOS</div>
+      <div class="loader-brand" id="loaderBrand">STORE</div>
       <div class="loader-line"></div>
       <p>Cargando catálogo</p>
     </div>
   </div>
-  <header class="minimal-sitebar">
-    <div></div>
-    <p>PEDIDO DIRECTO POR WHATSAPP · CATÁLOGO PÚBLICO MAOS</p>
+
+  <header class="minimal-sitebar wl-sitebar">
+    <div class="wl-sitebar-left" id="wlHeaderSocials"></div>
+    <p id="catalogHeaderText">CATÁLOGO PÚBLICO</p>
     <nav>
       <button type="button" id="searchToggleBtn">SEARCH</button>
       <button type="button" id="scrollCartBtn">BAG</button>
     </nav>
   </header>
 
-  <div class="minimal-shop-shell">
-    <aside class="minimal-shop-sidebar">
-      <a class="minimal-shop-logo" href="index.html" id="publicBrandLogo">MAOS</a>
-      <nav class="minimal-shop-nav">
+  <div class="minimal-shop-shell wl-shop-shell">
+    <aside class="minimal-shop-sidebar wl-sidebar">
+      <a class="minimal-shop-logo wl-logo" href="index.html" id="publicBrandLogo">STORE</a>
+      <nav class="minimal-shop-nav wl-nav">
         <button class="catalog-side-link active" data-side-category="">SHOP ALL</button>
         <div id="categoryNav"></div>
       </nav>
-      <div class="minimal-shop-footer">© MAOS</div>
+      <div class="wl-sidebar-socials" id="wlSidebarSocials"></div>
+      <div class="minimal-shop-footer wl-footer" id="catalogFooterText">© STORE</div>
     </aside>
 
-    <main class="minimal-shop-main">
-      <div class="minimal-shop-controls">
+    <main class="minimal-shop-main wl-main">
+      <div class="minimal-shop-controls wl-controls">
         <div class="minimal-control-left">
           <button type="button" id="toggleFiltersBtn">FILTER</button>
           <span id="activeCategoryLabel">SHOP ALL</span>
@@ -48,8 +50,16 @@
         </div>
       </div>
 
-      <section id="cart" class="minimal-shop-cart"></section>
-      <section id="catalogGrid" class="minimal-product-grid"></section>
+      <section id="featuredSection" class="wl-featured-section hidden">
+        <div class="wl-section-head">
+          <span id="featuredKicker">NEW</span>
+          <h2 id="featuredTitle">Novedades</h2>
+        </div>
+        <section id="featuredGrid" class="minimal-product-grid wl-featured-grid"></section>
+      </section>
+
+      <section id="cart" class="minimal-shop-cart wl-cart"></section>
+      <section id="catalogGrid" class="minimal-product-grid wl-product-grid"></section>
       <p id="catalogStatus" class="minimal-catalog-status"></p>
     </main>
   </div>

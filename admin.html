@@ -38,7 +38,7 @@
         <button data-tab="clients">Clientes</button>
         <button data-tab="orders">Pedidos</button>
         <button data-tab="webOrders">Pedidos web</button>
-        <button data-tab="settings">Respaldo / Identidad</button>
+        <button data-tab="settings">Tienda / Tema</button>
         <a class="button ghost" href="index.html" target="_blank">Ver catálogo</a>
         <button id="logoutBtn">Salir</button>
       </nav>
@@ -143,27 +143,63 @@
         </section>
       </section>
 
-      <section id="settingsTab" class="tab hidden">
+      <section id="settingsTab" class="tab hidden white-label-settings-tab">
         <div class="hero">
           <div>
-            <span class="kicker">SETUP</span>
-            <h2>Logo / identidad / importación</h2>
-            <p class="muted">Personaliza la marca, logo, WhatsApp e importa productos de la app local.</p>
+            <span class="kicker">WHITE LABEL</span>
+            <h2>Configuración de tienda</h2>
+            <p class="muted">Personaliza logo, redes, diseño, colores y sección de novedades.</p>
+          </div>
+          <div class="toolbar">
+            <a class="button ghost" href="index.html" target="_blank">Ver catálogo</a>
+            <button class="primary" id="saveBrandBtn">Guardar tienda</button>
           </div>
         </div>
-        <div class="settings-grid">
-          <section class="panel">
-            <h3>Identidad de marca</h3>
+
+        <div class="settings-grid white-label-settings-grid">
+          <section class="panel white-label-panel">
+            <h3>Marca y contacto</h3>
             <div class="form-grid">
-              <label>Nombre de marca<input id="brandNameInput" placeholder="MAOS"></label>
-              <label>WhatsApp tienda<input id="storeWhatsappInput" placeholder="523112648451"></label>
+              <label>Nombre de tienda<input id="brandNameInput" placeholder="Mi tienda"></label>
+              <label>WhatsApp<input id="storeWhatsappInput" placeholder="523112648451"></label>
+              <label>Instagram<input id="instagramInput" placeholder="https://instagram.com/tu_tienda"></label>
+              <label>TikTok<input id="tiktokInput" placeholder="https://tiktok.com/@tu_tienda"></label>
+              <label>Facebook<input id="facebookInput" placeholder="https://facebook.com/tu_tienda"></label>
               <label class="wide">Logo<input id="brandLogoInput" type="file" accept="image/*"></label>
               <div class="wide preview-list logo-preview" id="brandLogoPreview"></div>
             </div>
-            <div class="toolbar" style="margin-top:14px;"><button class="primary" id="saveBrandBtn">Guardar identidad</button></div>
+            <p class="status">Solo el logo queda como personalización visual libre para mantener el diseño limpio.</p>
+          </section>
+
+          <section class="panel white-label-panel">
+            <h3>Diseño de catálogo</h3>
+            <div class="form-grid">
+              <label>Diseño
+                <select id="themeIdInput">
+                  <option value="minimal-street">Minimal Streetwear</option>
+                  <option value="boutique-clean">Boutique Clean</option>
+                  <option value="drop-catalog">Drop Catalog</option>
+                  <option value="market-grid">Market Grid</option>
+                  <option value="editorial-simple">Editorial Simple</option>
+                </select>
+              </label>
+              <label>Color principal<input id="accentColorInput" type="color" value="#111111"></label>
+              <label>Fondo<input id="backgroundColorInput" type="color" value="#f8f7f3"></label>
+              <label>Texto<input id="textColorInput" type="color" value="#111111"></label>
+              <label class="wide toggle-row"><input id="showFeaturedInput" type="checkbox"> Mostrar sección de novedades</label>
+              <label class="wide">Título de novedades<input id="featuredTitleInput" placeholder="Novedades"></label>
+            </div>
+            <div class="theme-preview-grid" id="themePreviewGrid">
+              <div class="theme-preview-card" data-theme-choice="minimal-street"><b>Minimal</b><span>sidebar + grid limpio</span></div>
+              <div class="theme-preview-card" data-theme-choice="boutique-clean"><b>Boutique</b><span>suave y elegante</span></div>
+              <div class="theme-preview-card" data-theme-choice="drop-catalog"><b>Drop</b><span>más marcado</span></div>
+              <div class="theme-preview-card" data-theme-choice="market-grid"><b>Market</b><span>directo y práctico</span></div>
+              <div class="theme-preview-card" data-theme-choice="editorial-simple"><b>Editorial</b><span>más visual</span></div>
+            </div>
             <p id="settingsStatus" class="status"></p>
           </section>
-          <section class="panel">
+
+          <section class="panel white-label-panel wide-settings-panel">
             <h3>Importar respaldo local</h3>
             <p class="muted">Exporta JSON desde la app local, súbelo aquí y se crearán productos, variantes e imágenes.</p>
             <input id="importJson" type="file" accept="application/json">

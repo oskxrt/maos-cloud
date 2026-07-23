@@ -17,7 +17,7 @@ let products = [];
 let webOrders = [];
 let adminOrders = [];
 let customers = [];
-let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451', logo_url: '' };
+let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451', logo_url: '', facebook_url: '', instagram_url: '', tiktok_url: '', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades' };
 let currentImages = [];
 let selectedFiles = [];
 let editingOrder = null;
@@ -38,6 +38,16 @@ function renderBrand() {
   if (preview) preview.innerHTML = logo ? `<img src="${logo}" alt="Logo actual">` : '<span class="muted">Sin logo cargado</span>';
   if ($('#brandNameInput')) $('#brandNameInput').value = name;
   if ($('#storeWhatsappInput')) $('#storeWhatsappInput').value = settings.store_whatsapp || cfg.STORE_WHATSAPP || '';
+  if ($('#instagramInput')) $('#instagramInput').value = settings.instagram_url || '';
+  if ($('#tiktokInput')) $('#tiktokInput').value = settings.tiktok_url || '';
+  if ($('#facebookInput')) $('#facebookInput').value = settings.facebook_url || '';
+  if ($('#themeIdInput')) $('#themeIdInput').value = settings.theme_id || 'minimal-street';
+  if ($('#accentColorInput')) $('#accentColorInput').value = settings.accent_color || '#111111';
+  if ($('#backgroundColorInput')) $('#backgroundColorInput').value = settings.background_color || '#f8f7f3';
+  if ($('#textColorInput')) $('#textColorInput').value = settings.text_color || '#111111';
+  if ($('#showFeaturedInput')) $('#showFeaturedInput').checked = settings.show_featured === true || settings.show_featured === 'true';
+  if ($('#featuredTitleInput')) $('#featuredTitleInput').value = settings.featured_title || 'Novedades';
+  $$('.theme-preview-card').forEach(card => card.classList.toggle('active', card.dataset.themeChoice === (settings.theme_id || 'minimal-street')));
 }
 
 async function loadSettings() {
@@ -47,7 +57,7 @@ async function loadSettings() {
 }
 
 async function saveBrandSettings() {
-  setStatus('#settingsStatus', 'Guardando identidad...');
+  setStatus('#settingsStatus', 'Guardando tienda...');
   let logoUrl = settings.logo_url || '';
   const file = $('#brandLogoInput').files?.[0];
   if (file) {
@@ -60,16 +70,25 @@ async function saveBrandSettings() {
   settings = {
     ...settings,
     id: 'main',
-    brand_name: $('#brandNameInput').value.trim() || 'MAOS',
-    store_whatsapp: normalizeWhatsapp($('#storeWhatsappInput').value) || '523112648451',
+    brand_name: $('#brandNameInput').value.trim() || 'Mi tienda',
+    store_whatsapp: normalizeWhatsapp($('#storeWhatsappInput').value) || settings.store_whatsapp || cfg.STORE_WHATSAPP || '',
     logo_url: logoUrl,
+    instagram_url: $('#instagramInput')?.value.trim() || '',
+    tiktok_url: $('#tiktokInput')?.value.trim() || '',
+    facebook_url: $('#facebookInput')?.value.trim() || '',
+    theme_id: $('#themeIdInput')?.value || 'minimal-street',
+    accent_color: $('#accentColorInput')?.value || '#111111',
+    background_color: $('#backgroundColorInput')?.value || '#f8f7f3',
+    text_color: $('#textColorInput')?.value || '#111111',
+    show_featured: Boolean($('#showFeaturedInput')?.checked),
+    featured_title: $('#featuredTitleInput')?.value.trim() || 'Novedades',
     updated_at: new Date().toISOString()
   };
   const { error } = await supabase.from('app_settings').upsert(settings, { onConflict: 'id' });
-  if (error) { setStatus('#settingsStatus', error.message); return; }
-  $('#brandLogoInput').value = '';
+  if (error) { setStatus('#settingsStatus', `${error.message}. Corre primero el SQL v40 en Supabase si aún no lo hiciste.`); return; }
+  if ($('#brandLogoInput')) $('#brandLogoInput').value = '';
   renderBrand();
-  setStatus('#settingsStatus', 'Identidad guardada.');
+  setStatus('#settingsStatus', 'Tienda guardada. Refresca el catálogo para ver los cambios.');
 }
 
 async function requireSession() {
@@ -923,6 +942,8 @@ $('#addPaymentBtn').addEventListener('click', () => addPaymentRow({ amount: 0, m
 $('#orderDiscount').addEventListener('input', updateOrderPreview);
 $('#importBtn').addEventListener('click', importLocalJson);
 $('#saveBrandBtn').addEventListener('click', saveBrandSettings);
+$('#themeIdInput')?.addEventListener('change', renderBrand);
+$$('.theme-preview-card').forEach(card => card.addEventListener('click', () => { $('#themeIdInput').value = card.dataset.themeChoice; renderBrand(); }));
 $('#productCategory').addEventListener('input', () => { if (!$('#productSku').value.trim()) $('#productSku').value = nextSku($('#productCategory').value, $('#productName').value); });
 $('#productName').addEventListener('input', () => { if (!$('#productSku').value.trim()) $('#productSku').value = nextSku($('#productCategory').value, $('#productName').value); });
 $('#downloadReceiptBtn').addEventListener('click', downloadReceiptImage);

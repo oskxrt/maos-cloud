@@ -130,3 +130,40 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Se eliminó la posibilidad de seleccionar el texto de las flechas del carrusel.
 - Las flechas ahora se renderizan con CSS, no como texto seleccionable.
 - El producto se muestra con un zoom sutil para compensar fotos con mucho lienzo blanco.
+
+
+## v40 White Label Responsive
+
+Primera base para convertir la app en producto/membresía.
+
+### Nuevo
+- Configuración de tienda desde el panel.
+- Solo logo como personalización visual libre.
+- Redes sociales: Facebook, Instagram y TikTok.
+- 5 diseños de catálogo:
+  - Minimal Streetwear
+  - Boutique Clean
+  - Drop Catalog
+  - Market Grid
+  - Editorial Simple
+- Colores editables: principal, fondo y texto.
+- Sección de novedades activable/desactivable.
+- Catálogo responsive reforzado para móvil/tablet/desktop.
+
+### Antes de usar
+Ejecuta en Supabase:
+
+`PEGAR_EN_SUPABASE_V40_WHITE_LABEL.sql`
+
+### Subir a GitHub
+Reemplaza:
+
+- index.html
+- public-catalog.js
+- admin.html
+- admin.js
+- styles.css
+- README_CLOUD.md
+- PEGAR_EN_SUPABASE_V40_WHITE_LABEL.sql
+
+No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
