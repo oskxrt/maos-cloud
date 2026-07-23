@@ -20,6 +20,9 @@ let customers = [];
 let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451', logo_url: '', facebook_url: '', instagram_url: '', tiktok_url: '', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades' };
 let currentUser = null;
 let isSuperUser = false;
+let availableStores = [];
+let currentStore = null;
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001';
 const THEME_DEFAULTS = {
   'minimal-street': { accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111' },
   'boutique-clean': { accent_color: '#8a5a44', background_color: '#fbf7f2', text_color: '#231f20' },
@@ -33,6 +36,10 @@ let editingOrder = null;
 let receiptOrderId = null;
 
 function setStatus(id, msg) { const el = $(id); if (el) el.textContent = msg || ''; }
+function currentStoreId() { return currentStore?.id || MAIN_STORE_ID; }
+function currentStoreSlug() { return currentStore?.slug || 'maos'; }
+function slugify(value='') { return normalize(value).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || `tienda-${Date.now().toString(36)}`; }
+function storeCatalogUrl(store=currentStore) { const slug = store?.slug || currentStoreSlug(); return `${location.origin}${location.pathname.replace(/admin\.html$/, '').replace(/\/$/, '/') }index.html?store=${encodeURIComponent(slug)}`; }
 function brandInitial() { return (settings.brand_name || cfg.BRAND_NAME || 'M').slice(0,1).toUpperCase(); }
 function applyThemeInputs(themeId = $('#themeIdInput')?.value || 'minimal-street') {
   const defaults = THEME_DEFAULTS[themeId] || THEME_DEFAULTS['minimal-street'];
@@ -76,22 +83,57 @@ function renderBrand() {
 }
 
 async function loadSettings() {
-  const { data, error } = await supabase.from('app_settings').select('*').eq('id', 'main').maybeSingle();
-  if (!error && data) settings = { ...settings, ...data };
+  const baseSettings = { brand_name: currentStore?.name || cfg.BRAND_NAME || 'Mi tienda', store_whatsapp: cfg.STORE_WHATSAPP || '', logo_url: '', facebook_url: '', instagram_url: '', tiktok_url: '', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades' };
+  const storeId = currentStoreId();
+  const { data, error } = await supabase.from('app_settings').select('*').eq('store_id', storeId).maybeSingle();
+  settings = !error && data ? { ...baseSettings, ...data } : baseSettings;
   renderBrand();
 }
-async function loadSuperUserState() {
+async function loadAccessState() {
   try {
     const { data } = await supabase.auth.getUser();
     currentUser = data?.user || null;
     const email = String(currentUser?.email || '').toLowerCase();
-    if (!email) { isSuperUser = false; return; }
-    const { data: row, error } = await supabase.from('platform_admins').select('email,is_active').eq('email', email).maybeSingle();
-    isSuperUser = !error && !!row?.is_active;
+    if (!email) { isSuperUser = false; availableStores = []; currentStore = null; return; }
+    const { data: row } = await supabase.from('platform_admins').select('email,is_active').eq('email', email).maybeSingle();
+    isSuperUser = !!row?.is_active;
+    if (isSuperUser) {
+      const { data: stores, error } = await supabase.from('stores').select('*').order('created_at', { ascending: true });
+      if (error) throw error;
+      availableStores = stores || [];
+    } else {
+      const { data: memberships, error } = await supabase.from('store_members').select('*, stores(*)').eq('email', email).eq('is_active', true).order('created_at', { ascending: true });
+      if (error) throw error;
+      availableStores = (memberships || []).map(m => m.stores).filter(Boolean).filter(s => s.status !== 'suspendida');
+    }
+    const saved = localStorage.getItem('oski_current_store_id');
+    currentStore = availableStores.find(s => s.id === saved) || availableStores[0] || null;
+    renderStoreSwitcher();
+    renderSuperAdmin();
   } catch (err) {
+    console.warn('No se pudo cargar acceso multi-tienda:', err);
     isSuperUser = false;
-    console.warn('Sin tabla de super usuario todavía:', err);
+    availableStores = [];
+    currentStore = null;
   }
+}
+function renderStoreSwitcher() {
+  const wrap = $('#storeSwitcherWrap');
+  const select = $('#storeSwitcher');
+  if (!wrap || !select) return;
+  wrap.classList.toggle('hidden', !availableStores.length);
+  select.innerHTML = availableStores.map(store => `<option value="${store.id}" ${store.id === currentStoreId() ? 'selected' : ''}>${escapeHTML(store.name || store.slug)}</option>`).join('');
+  ['#currentStoreCatalogLink','#sidebarCatalogLink','#settingsCatalogLink'].forEach(sel => { const link = $(sel); if (link) link.href = storeCatalogUrl(); });
+  const superBtn = $('#superAdminNavBtn');
+  if (superBtn) superBtn.classList.toggle('hidden', !isSuperUser);
+}
+async function changeCurrentStore(storeId) {
+  currentStore = availableStores.find(s => s.id === storeId) || currentStore;
+  localStorage.setItem('oski_current_store_id', currentStoreId());
+  renderStoreSwitcher();
+  await loadSettings();
+  await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]);
+  renderDashboard();
 }
 
 async function saveBrandSettings() {
@@ -99,7 +141,7 @@ async function saveBrandSettings() {
   let logoUrl = settings.logo_url || '';
   const file = $('#brandLogoInput').files?.[0];
   if (file) {
-    const path = `brand/${Date.now()}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
+    const path = `stores/${currentStoreSlug()}/brand/${Date.now()}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
     const { error: upError } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
     if (upError) { setStatus('#settingsStatus', upError.message); return; }
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
@@ -107,7 +149,8 @@ async function saveBrandSettings() {
   }
   settings = {
     ...settings,
-    id: 'main',
+    id: currentStoreId(),
+    store_id: currentStoreId(),
     brand_name: $('#brandNameInput').value.trim() || 'Mi tienda',
     store_whatsapp: normalizeWhatsapp($('#storeWhatsappInput').value) || settings.store_whatsapp || cfg.STORE_WHATSAPP || '',
     logo_url: logoUrl,
@@ -122,11 +165,11 @@ async function saveBrandSettings() {
     featured_title: $('#featuredTitleInput')?.value.trim() || 'Novedades',
     updated_at: new Date().toISOString()
   };
-  const { error } = await supabase.from('app_settings').upsert(settings, { onConflict: 'id' });
+  const { error } = await supabase.from('app_settings').upsert(settings, { onConflict: 'store_id' });
   if (error) { setStatus('#settingsStatus', `${error.message}. Corre primero el SQL v40 en Supabase si aún no lo hiciste.`); return; }
   if ($('#brandLogoInput')) $('#brandLogoInput').value = '';
   renderBrand();
-  setStatus('#settingsStatus', 'Tienda guardada. Abre o refresca el catálogo para ver los cambios.');
+  setStatus('#settingsStatus', 'Tienda guardada. Abre o refresca el catálogo de esta tienda para ver los cambios.');
 }
 
 async function requireSession() {
@@ -137,7 +180,8 @@ function showLogin() { $('#loginView').classList.remove('hidden'); $('#adminView
 async function showAdmin() {
   $('#loginView').classList.add('hidden');
   $('#adminView').classList.remove('hidden');
-  await loadSuperUserState();
+  await loadAccessState();
+  if (!currentStore) { setStatus('#dashboardStatus', isSuperUser ? 'Crea tu primera tienda en Super Admin.' : 'Tu usuario todavía no tiene tienda asignada.'); renderBrand(); return; }
   await loadSettings();
   await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]);
   renderDashboard();
@@ -213,7 +257,7 @@ function renderProductsTable() {
   setStatus('#productListStatus', filtered.length ? `${filtered.length} producto${filtered.length === 1 ? '' : 's'} visible${filtered.length === 1 ? '' : 's'}.` : 'Sin resultados.');
 }
 async function loadProducts() {
-  const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').eq('store_id', currentStoreId()).order('created_at', { ascending: false });
   if (error) { setStatus('#productListStatus', `Error: ${error.message}`); return; }
   products = data || [];
   renderProductsTable();
@@ -222,7 +266,7 @@ async function uploadImages(productId, files, startSort = 0) {
   const rows = [];
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const path = `${productId}/${Date.now()}-${i}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
+    const path = `stores/${currentStoreSlug()}/${productId}/${Date.now()}-${i}-${file.name.replace(/[^a-z0-9._-]/gi, '-')}`;
     const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
     if (error) throw error;
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
@@ -242,13 +286,14 @@ async function saveProduct(event) {
   setStatus('#productStatusText', 'Guardando...');
   const id = $('#productId').value;
   const payload = {
+    store_id: currentStoreId(),
     name: $('#productName').value.trim(), sku: $('#productSku').value.trim() || nextSku($('#productCategory').value, $('#productName').value),
     category: $('#productCategory').value.trim(), supplier: $('#productSupplier').value.trim(), cost: Number($('#productCost').value || 0), price: Number($('#productPrice').value || 0),
     status: $('#productStatus').value, description: $('#productDescription').value.trim(), variants_text: $('#productVariants').value.trim(), updated_at: new Date().toISOString()
   };
   let productId = id;
   if (id) {
-    const { error } = await supabase.from('products').update(payload).eq('id', id);
+    const { error } = await supabase.from('products').update(payload).eq('id', id).eq('store_id', currentStoreId());
     if (error) { setStatus('#productStatusText', error.message); return; }
     await supabase.from('product_variants').delete().eq('product_id', id);
   } else {
@@ -302,7 +347,7 @@ function editProduct(id) {
 async function hideProduct() {
   const id = $('#productId').value;
   if (!id) return;
-  await supabase.from('products').update({ status: 'Oculto', updated_at: new Date().toISOString() }).eq('id', id);
+  await supabase.from('products').update({ status: 'Oculto', updated_at: new Date().toISOString() }).eq('id', id).eq('store_id', currentStoreId());
   clearForm();
   $('#productDialog')?.close();
   await loadProducts();
@@ -310,7 +355,7 @@ async function hideProduct() {
 }
 
 async function loadWebOrders() {
-  const { data, error } = await supabase.from('catalog_orders').select('*, catalog_order_items(*)').order('created_at', { ascending: false }).limit(80);
+  const { data, error } = await supabase.from('catalog_orders').select('*, catalog_order_items(*)').eq('store_id', currentStoreId()).order('created_at', { ascending: false }).limit(80);
   if (error) return;
   webOrders = data || [];
   $('#ordersTable').innerHTML = webOrders.map(order => `<tr><td>${new Date(order.created_at).toLocaleString('es-MX')}</td><td>${(order.catalog_order_items || []).map(item => `<strong>${escapeHTML(item.product_name)}</strong><br><span class="muted">${escapeHTML(item.variant || 'Sin variante')} · x${item.qty}</span>`).join('<hr>')}</td><td>${money(order.total_reference)}</td><td><span class="badge">${escapeHTML(order.status || 'Nuevo')}</span></td><td><div class="row-actions"><button class="ghost small" data-convert-web-order="${order.id}">Pasar a pedido</button><button class="danger small" data-delete-web-order="${order.id}">Eliminar</button></div></td></tr>`).join('') || '<tr><td colspan="5">Sin pedidos web todavía.</td></tr>';
@@ -330,7 +375,7 @@ function nextFolio() {
   return `MAOS-${String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0')}`;
 }
 async function loadAdminOrders() {
-  const { data, error } = await supabase.from('orders').select('*, order_items(*), order_payments(*)').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('orders').select('*, order_items(*), order_payments(*)').eq('store_id', currentStoreId()).order('created_at', { ascending: false });
   if (error) { console.warn(error); return; }
   adminOrders = data || [];
   renderAdminOrdersTable();
@@ -367,7 +412,7 @@ function customerStats(customer) {
 }
 async function loadCustomers() {
   const table = $('#clientsTable');
-  const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('customers').select('*').eq('store_id', currentStoreId()).order('created_at', { ascending: false });
   if (error) {
     console.warn(error);
     customers = [];
@@ -476,6 +521,7 @@ async function saveClient(event) {
   const name = $('#clientName').value.trim();
   if (!name) { setStatus('#clientStatusText', 'Escribe el nombre del cliente.'); return; }
   const payload = {
+    store_id: currentStoreId(),
     name,
     phone: $('#clientPhone').value.trim(),
     phone_normalized: normalizeWhatsapp($('#clientPhone').value),
@@ -487,7 +533,7 @@ async function saveClient(event) {
   };
   const id = $('#clientId').value;
   setStatus('#clientStatusText', 'Guardando cliente...');
-  const result = id ? await supabase.from('customers').update(payload).eq('id', id) : await supabase.from('customers').insert(payload);
+  const result = id ? await supabase.from('customers').update(payload).eq('id', id).eq('store_id', currentStoreId()) : await supabase.from('customers').insert(payload);
   if (result.error) { setStatus('#clientStatusText', result.error.message); return; }
   await loadCustomers();
   setStatus('#clientStatusText', 'Cliente guardado.');
@@ -498,7 +544,7 @@ async function deleteClient() {
   const id = $('#clientId')?.value;
   if (!id) { clearClientForm(); return; }
   if (!confirm('¿Borrar este cliente? Sus pedidos existentes no se borran.')) return;
-  const { error } = await supabase.from('customers').delete().eq('id', id);
+  const { error } = await supabase.from('customers').delete().eq('id', id).eq('store_id', currentStoreId());
   if (error) { setStatus('#clientStatusText', error.message); return; }
   await loadCustomers();
   $('#clientDialog')?.close();
@@ -517,16 +563,16 @@ async function upsertCustomerFromOrderPayload(payload) {
   try {
     let existing = null;
     if (keyPhone) {
-      const { data } = await supabase.from('customers').select('*').eq('phone_normalized', keyPhone).maybeSingle();
+      const { data } = await supabase.from('customers').select('*').eq('store_id', currentStoreId()).eq('phone_normalized', keyPhone).maybeSingle();
       existing = data;
     }
     if (!existing && name) {
-      const { data } = await supabase.from('customers').select('*').eq('name', name).maybeSingle();
+      const { data } = await supabase.from('customers').select('*').eq('store_id', currentStoreId()).eq('name', name).maybeSingle();
       existing = data;
     }
-    const data = { name: name || existing?.name || 'Cliente', phone, phone_normalized: keyPhone || null, social: payload.customer_social || '', updated_at: new Date().toISOString() };
+    const data = { store_id: currentStoreId(), name: name || existing?.name || 'Cliente', phone, phone_normalized: keyPhone || null, social: payload.customer_social || '', updated_at: new Date().toISOString() };
     if (existing?.id) {
-      await supabase.from('customers').update({ ...data, social: data.social || existing.social || '' }).eq('id', existing.id);
+      await supabase.from('customers').update({ ...data, social: data.social || existing.social || '' }).eq('id', existing.id).eq('store_id', currentStoreId());
       return existing.id;
     }
     const { data: inserted } = await supabase.from('customers').insert(data).select('id').single();
@@ -728,6 +774,7 @@ async function saveOrder(event) {
   const items = collectOrderItems();
   if (!items.length) { setStatus('#orderFormStatus', 'Agrega al menos un producto.'); return; }
   const payload = {
+    store_id: currentStoreId(),
     folio: editingOrder?.folio || nextFolio(), customer_id: $('#orderCustomerId')?.value || null, customer_name: $('#orderCustomerName').value.trim(), customer_phone: $('#orderCustomerPhone').value.trim(), customer_social: $('#orderCustomerSocial').value.trim(),
     status: $('#orderStatus').value, order_date: $('#orderDate').value || today(), order_time: $('#orderTime').value || '', due_date: $('#orderDueDate').value || null, delivery: $('#orderDelivery').value.trim(), discount: Number($('#orderDiscount').value || 0), notes: $('#orderNotes').value.trim(), updated_at: new Date().toISOString()
   };
@@ -736,7 +783,7 @@ async function saveOrder(event) {
   payload.customer_id = customerId || payload.customer_id || null;
   setStatus('#orderFormStatus', 'Guardando pedido...');
   if (id) {
-    const { error } = await supabase.from('orders').update(payload).eq('id', id);
+    const { error } = await supabase.from('orders').update(payload).eq('id', id).eq('store_id', currentStoreId());
     if (error) { setStatus('#orderFormStatus', error.message); return; }
     await supabase.from('order_items').delete().eq('order_id', id);
     await supabase.from('order_payments').delete().eq('order_id', id);
@@ -755,12 +802,12 @@ async function saveOrder(event) {
 async function convertWebOrder(webOrderId) {
   const web = webOrders.find(o => o.id === webOrderId);
   if (!web) return;
-  const payload = { folio: nextFolio(), customer_name: 'Cliente web', status: 'Pendiente', order_date: today(), order_time: nowTime(), notes: web.message || '', updated_at: new Date().toISOString() };
+  const payload = { store_id: currentStoreId(), folio: nextFolio(), customer_name: 'Cliente web', status: 'Pendiente', order_date: today(), order_time: nowTime(), notes: web.message || '', updated_at: new Date().toISOString() };
   const { data, error } = await supabase.from('orders').insert(payload).select().single();
   if (error) { alert(error.message); return; }
   const rows = (web.catalog_order_items || []).map(item => ({ order_id: data.id, product_id: item.product_id, product_name: item.product_name, sku: item.sku || '', variant_label: item.variant || '', qty: item.qty || 1, price: item.unit_price || 0, cost: 0 }));
   if (rows.length) await supabase.from('order_items').insert(rows);
-  await supabase.from('catalog_orders').update({ status: 'Pasado a pedido' }).eq('id', webOrderId);
+  await supabase.from('catalog_orders').update({ status: 'Pasado a pedido' }).eq('id', webOrderId).eq('store_id', currentStoreId());
   await Promise.all([loadWebOrders(), loadAdminOrders()]);
   activateTab('orders');
   editOrder(data.id);
@@ -776,7 +823,7 @@ async function deleteOrder(id) {
   if (itemsError) { alert(itemsError.message); return; }
   const { error: paymentsError } = await supabase.from('order_payments').delete().eq('order_id', id);
   if (paymentsError) { alert(paymentsError.message); return; }
-  const { error } = await supabase.from('orders').delete().eq('id', id);
+  const { error } = await supabase.from('orders').delete().eq('id', id).eq('store_id', currentStoreId());
   if (error) { alert(error.message); return; }
   await Promise.all([loadAdminOrders(), loadCustomers()]);
 }
@@ -785,7 +832,7 @@ async function deleteWebOrder(id) {
   const ok = confirm('¿Eliminar este pedido web del catálogo? Esta acción no se puede deshacer.');
   if (!ok) return;
   await supabase.from('catalog_order_items').delete().eq('order_id', id);
-  const { error } = await supabase.from('catalog_orders').delete().eq('id', id);
+  const { error } = await supabase.from('catalog_orders').delete().eq('id', id).eq('store_id', currentStoreId());
   if (error) { alert(error.message); return; }
   await loadWebOrders();
 }
@@ -913,6 +960,62 @@ async function sendReceiptToWhatsApp(orderId) {
   }, 'image/png');
 }
 
+
+async function createStore(event) {
+  event?.preventDefault?.();
+  if (!isSuperUser) return;
+  const name = $('#newStoreName')?.value.trim() || '';
+  const ownerEmail = String($('#newStoreOwnerEmail')?.value || '').trim().toLowerCase();
+  const plan = $('#newStorePlan')?.value || 'pro';
+  const status = $('#newStoreStatus')?.value || 'activa';
+  const slug = slugify($('#newStoreSlug')?.value || name);
+  if (!name || !ownerEmail) { setStatus('#superAdminStatus', 'Escribe nombre de tienda y email del dueño.'); return; }
+  setStatus('#superAdminStatus', 'Creando tienda...');
+  const { data: store, error } = await supabase.from('stores').insert({ name, slug, owner_email: ownerEmail, plan, status }).select().single();
+  if (error) { setStatus('#superAdminStatus', error.message); return; }
+  await supabase.from('store_members').insert({ store_id: store.id, email: ownerEmail, role: 'owner', is_active: true });
+  await supabase.from('app_settings').upsert({ id: store.id, store_id: store.id, brand_name: name, store_whatsapp: '', currency: cfg.CURRENCY || 'MXN', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades', updated_at: new Date().toISOString() }, { onConflict: 'store_id' });
+  $('#newStoreForm')?.reset();
+  setStatus('#superAdminStatus', `Tienda creada. Ahora crea/invita ese email en Supabase Auth o pide que se registre con ese mismo correo.`);
+  await loadAccessState();
+  await changeCurrentStore(store.id);
+}
+async function addStoreMember(event) {
+  event?.preventDefault?.();
+  if (!isSuperUser) return;
+  const storeId = $('#memberStoreId')?.value || currentStoreId();
+  const email = String($('#memberEmail')?.value || '').trim().toLowerCase();
+  const role = $('#memberRole')?.value || 'admin';
+  if (!storeId || !email) { setStatus('#superAdminStatus', 'Elige tienda y escribe email.'); return; }
+  const { error } = await supabase.from('store_members').upsert({ store_id: storeId, email, role, is_active: true }, { onConflict: 'store_id,email' });
+  if (error) { setStatus('#superAdminStatus', error.message); return; }
+  $('#memberEmail').value = '';
+  setStatus('#superAdminStatus', 'Usuario asignado a la tienda. Recuerda que el email debe existir en Auth o registrarse con ese mismo correo.');
+  await renderSuperAdmin();
+}
+async function toggleStoreStatus(storeId, status) {
+  if (!isSuperUser) return;
+  const next = status === 'activa' ? 'suspendida' : 'activa';
+  const { error } = await supabase.from('stores').update({ status: next, updated_at: new Date().toISOString() }).eq('id', storeId);
+  if (error) { alert(error.message); return; }
+  await loadAccessState();
+}
+async function renderSuperAdmin() {
+  const tab = $('#superAdminTab');
+  if (!tab) return;
+  tab.classList.toggle('hidden-super-only', !isSuperUser);
+  if (!isSuperUser) return;
+  const storeSelect = $('#memberStoreId');
+  if (storeSelect) storeSelect.innerHTML = availableStores.map(s => `<option value="${s.id}">${escapeHTML(s.name || s.slug)}</option>`).join('');
+  const table = $('#storesTable');
+  if (table) {
+    table.innerHTML = availableStores.length ? availableStores.map(store => `<tr><td><strong>${escapeHTML(store.name)}</strong><br><span class="muted">/${escapeHTML(store.slug)} · ${escapeHTML(store.owner_email || '')}</span></td><td>${escapeHTML(store.plan || '—')}</td><td><span class="badge">${escapeHTML(store.status || 'activa')}</span></td><td><div class="row-actions"><a class="button ghost small" href="${storeCatalogUrl(store)}" target="_blank">Catálogo</a><button class="ghost small" data-switch-store="${store.id}">Administrar</button><button class="danger small" data-toggle-store="${store.id}" data-store-status="${escapeAttr(store.status || 'activa')}">${store.status === 'activa' ? 'Suspender' : 'Activar'}</button></div></td></tr>`).join('') : '<tr><td colspan="4">Sin tiendas todavía.</td></tr>';
+  }
+  const { data: members } = await supabase.from('store_members').select('*, stores(name, slug)').order('created_at', { ascending: false }).limit(100);
+  const mt = $('#membersTable');
+  if (mt) mt.innerHTML = (members || []).map(m => `<tr><td>${escapeHTML(m.email)}</td><td>${escapeHTML(m.stores?.name || '—')}</td><td>${escapeHTML(m.role || 'admin')}</td><td>${m.is_active ? 'Activo' : 'Inactivo'}</td></tr>`).join('') || '<tr><td colspan="4">Sin miembros.</td></tr>';
+}
+
 async function dataUrlToFile(dataUrl, filename) { const res = await fetch(dataUrl); const blob = await res.blob(); return new File([blob], filename, { type: blob.type || 'image/jpeg' }); }
 async function importLocalJson() {
   const file = $('#importJson').files?.[0];
@@ -922,7 +1025,7 @@ async function importLocalJson() {
   const items = Array.isArray(json.products) ? json.products : [];
   let count = 0;
   for (const old of items) {
-    const payload = { name: old.name || 'Producto', sku: old.sku || nextSku(old.category, old.name), category: old.category || '', supplier: old.supplier || '', cost: Number(old.cost || 0), price: Number(old.price || 0), status: old.status || 'Disponible', description: old.description || '', variants_text: old.variants || '', updated_at: new Date().toISOString() };
+    const payload = { store_id: currentStoreId(), name: old.name || 'Producto', sku: old.sku || nextSku(old.category, old.name), category: old.category || '', supplier: old.supplier || '', cost: Number(old.cost || 0), price: Number(old.price || 0), status: old.status || 'Disponible', description: old.description || '', variants_text: old.variants || '', updated_at: new Date().toISOString() };
     const { data, error } = await supabase.from('products').insert(payload).select().single();
     if (error) continue;
     const productId = data.id;
@@ -943,11 +1046,14 @@ async function importLocalJson() {
 function activateTab(tab) {
   $$('.nav [data-tab]').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
   $$('.tab').forEach(el => el.classList.add('hidden'));
-  $(`#${tab}Tab`).classList.remove('hidden');
+  const tabEl = $(`#${tab}Tab`); if (tabEl) tabEl.classList.remove('hidden');
 }
 
 $('#loginForm').addEventListener('submit', async (event) => { event.preventDefault(); setStatus('#loginStatus', 'Entrando...'); const { error } = await supabase.auth.signInWithPassword({ email: $('#loginEmail').value, password: $('#loginPassword').value }); if (error) { setStatus('#loginStatus', error.message); return; } setStatus('#loginStatus', ''); await showAdmin(); });
 $('#logoutBtn').addEventListener('click', async () => { await supabase.auth.signOut(); showLogin(); });
+$('#storeSwitcher')?.addEventListener('change', e => changeCurrentStore(e.target.value));
+$('#newStoreForm')?.addEventListener('submit', createStore);
+$('#addMemberForm')?.addEventListener('submit', addStoreMember);
 $('#productForm').addEventListener('submit', saveProduct);
 $('#productImages').addEventListener('change', (event) => { selectedFiles = [...(event.target.files || [])]; renderPreview(); });
 $('#productImageUrls')?.addEventListener('input', renderPreview);
@@ -1022,6 +1128,10 @@ document.addEventListener('click', (event) => {
   if (deleteOrderId) deleteOrder(deleteOrderId);
   const deleteWebOrderId = event.target.closest('[data-delete-web-order]')?.dataset.deleteWebOrder;
   if (deleteWebOrderId) deleteWebOrder(deleteWebOrderId);
+  const switchStoreId = event.target.closest('[data-switch-store]')?.dataset.switchStore;
+  if (switchStoreId) { changeCurrentStore(switchStoreId); activateTab('dashboard'); }
+  const toggleStoreId = event.target.closest('[data-toggle-store]')?.dataset.toggleStore;
+  if (toggleStoreId) toggleStoreStatus(toggleStoreId, event.target.closest('[data-toggle-store]')?.dataset.storeStatus || 'activa');
 });
 
 $$('dialog').forEach(dialog => dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); }));

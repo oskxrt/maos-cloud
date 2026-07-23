@@ -8,6 +8,7 @@ const escapeHTML = (v) => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;'
 
 let products = [];
 let cart = [];
+let currentStore = null;
 let selectedCategory = '';
 let filtersVisible = false;
 let quickViewScrollY = 0;
@@ -92,6 +93,23 @@ function renderSocials() {
   ['#wlHeaderSocials', '#wlSidebarSocials'].forEach(sel => { const el = $(sel); if (el) el.innerHTML = html; });
 }
 
+function currentStoreId() { return currentStore?.id || '00000000-0000-0000-0000-000000000001'; }
+async function loadStore() {
+  const params = new URLSearchParams(location.search);
+  const slug = params.get('store') || params.get('tienda') || '';
+  try {
+    let query = supabase.from('stores').select('*').eq('status', 'activa');
+    if (slug) query = query.eq('slug', slug);
+    else query = query.order('created_at', { ascending: true }).limit(1);
+    const { data, error } = slug ? await query.maybeSingle() : await query.maybeSingle();
+    if (error) throw error;
+    currentStore = data || { id: '00000000-0000-0000-0000-000000000001', slug: 'maos', name: cfg.BRAND_NAME || 'Tienda' };
+  } catch (err) {
+    console.warn('No se pudo cargar tienda, usando main:', err);
+    currentStore = { id: '00000000-0000-0000-0000-000000000001', slug: 'maos', name: cfg.BRAND_NAME || 'Tienda' };
+  }
+}
+
 function renderBrand() {
   const logo = $('#publicBrandLogo');
   const name = settings.brand_name || cfg.BRAND_NAME || 'Tienda';
@@ -108,10 +126,11 @@ function renderBrand() {
 }
 
 async function loadSettings() {
+  const baseSettings = { brand_name: currentStore?.name || cfg.BRAND_NAME || 'Tienda', logo_url: '', store_whatsapp: cfg.STORE_WHATSAPP || '', facebook_url: '', instagram_url: '', tiktok_url: '', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades' };
   try {
-    const { data } = await supabase.from('app_settings').select('*').eq('id', 'main').maybeSingle();
-    if (data) settings = { ...settings, ...data };
-  } catch (err) { console.warn('No se pudieron cargar settings', err); }
+    const { data } = await supabase.from('app_settings').select('*').eq('store_id', currentStoreId()).maybeSingle();
+    settings = data ? { ...baseSettings, ...data } : baseSettings;
+  } catch (err) { console.warn('No se pudieron cargar settings', err); settings = baseSettings; }
   renderBrand();
 }
 
@@ -180,7 +199,7 @@ async function saveWebOrder(items) {
   try {
     const total = items.reduce((s, item) => s + Number(item.price || 0) * Number(item.qty || 0), 0);
     const message = whatsappMessage(items, total);
-    const { data: order, error } = await supabase.from('catalog_orders').insert({ total_reference: total, message, status: 'Nuevo' }).select().single();
+    const { data: order, error } = await supabase.from('catalog_orders').insert({ store_id: currentStoreId(), total_reference: total, message, status: 'Nuevo' }).select().single();
     if (error) throw error;
     const rows = items.map(item => ({ order_id: order.id, product_id: item.product_id, product_name: item.name, sku: item.sku, variant: item.variant, qty: item.qty, unit_price: item.price, line_total: item.price * item.qty }));
     if (rows.length) await supabase.from('catalog_order_items').insert(rows);
@@ -277,7 +296,7 @@ async function loadProducts() {
   setCatalogLoading(true);
   status.textContent = 'Cargando catálogo...';
   try {
-    const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('products').select('*, product_images(*), product_variants(*)').eq('store_id', currentStoreId()).order('created_at', { ascending: false });
     if (error) throw error;
     products = (data || []).filter(statusIsPublic).filter(p => productStock(p) > 0 || !productVariants(p).length);
     populateFilters();
@@ -324,5 +343,6 @@ $('#colorFilter').addEventListener('change', render);
 $('#scrollCartBtn').addEventListener('click', () => $('#cart')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 $('#closeQuickView')?.addEventListener('click', () => $('#quickViewModal')?.close());
 
+await loadStore();
 await loadSettings();
 await loadProducts();

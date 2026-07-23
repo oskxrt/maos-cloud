@@ -3169,3 +3169,41 @@ body.quickview-scroll-lock {
   .wl-theme-drop-catalog .minimal-product-photo,
   .wl-theme-editorial-simple .minimal-product-photo { height: 340px !important; }
 }
+
+
+/* v42 multi-tienda / super admin */
+.store-switcher {
+  margin: 18px 0 10px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  background: rgba(255,255,255,.05);
+  display: grid;
+  gap: 10px;
+}
+.store-switcher label { color: #cbd5e1; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+.store-switcher select {
+  margin-top: 6px;
+  width: 100%;
+  background: #fff;
+  color: #111827;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px;
+}
+.super-user-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fbbf24;
+  color: #111827;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.hidden-super-only { display: none !important; }
+.super-admin-tab:not(.hidden-super-only) { display: block; }
+.super-admin-grid { grid-template-columns: 1fr 1fr; margin-bottom: 20px; }
+@media (max-width: 900px) { .super-admin-grid { grid-template-columns: 1fr; } }

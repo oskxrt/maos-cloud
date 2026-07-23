@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear cuenta — OSKI Store</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="admin-page">
+  <section class="login-shell">
+    <form id="signupForm" class="login-card">
+      <div class="brand">
+        <div class="brand-mark">O</div>
+        <div>
+          <h1>Crear cuenta</h1>
+          <p class="muted">Usa el mismo email que el super usuario asignó a tu tienda.</p>
+        </div>
+      </div>
+      <label>Email<input id="signupEmail" type="email" required placeholder="tu@email.com"></label>
+      <label>Contraseña<input id="signupPassword" type="password" required minlength="6" placeholder="Mínimo 6 caracteres"></label>
+      <button class="primary" type="submit">Crear cuenta</button>
+      <a class="button ghost" href="admin.html">Ya tengo cuenta</a>
+      <p id="signupStatus" class="status"></p>
+    </form>
+  </section>
+  <script src="cloud-config.js"></script>
+  <script type="module" src="signup.js"></script>
+</body>
+</html>

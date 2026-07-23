@@ -177,3 +177,65 @@ No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
 - Se agregó estructura `platform_admins` para dejar preparado el rol de **super usuario**.
 - Oscar queda agregado como super usuario inicial con `oskxrt@gmail.com` en el SQL v41.
 - En el panel aparece un badge de **SUPER USUARIO** cuando el correo autenticado está registrado en `platform_admins`.
+
+## v42 — Multi-tienda base / Super Admin
+
+Esta versión convierte la app en una base de membresía multi-tienda.
+
+### Incluye
+
+- Tabla `stores` para manejar tiendas.
+- Tabla `store_members` para asignar usuarios a tiendas.
+- Tabla `platform_admins` para super usuarios.
+- Oscar queda como super usuario con `oskxrt@gmail.com`.
+- Todos los módulos principales ahora trabajan con `store_id`:
+  - productos
+  - clientes
+  - pedidos internos
+  - pedidos web
+  - configuración de tienda
+- Panel nuevo **Super Admin**.
+- Desde el Super Admin puedes:
+  - crear tienda
+  - asignar dueño por email
+  - asignar usuarios a tiendas
+  - activar/suspender tiendas
+  - abrir catálogo público de cada tienda
+- Cada tienda tiene su link público:
+
+```txt
+index.html?store=slug-de-la-tienda
+```
+
+### Importante sobre usuarios
+
+Por seguridad, el panel web no usa la secret key de Supabase. Por eso la creación real del usuario de Auth puede hacerse de dos formas:
+
+1. El usuario crea cuenta desde `signup.html` usando el mismo email que asignaste a la tienda.
+2. Tú lo creas manualmente en Supabase > Authentication > Users.
+
+Cuando ese email entra al panel, la app busca sus tiendas asignadas en `store_members` y solo carga esas tiendas.
+
+### Actualización
+
+1. Ejecuta completo:
+
+```txt
+PEGAR_EN_SUPABASE_V42_MULTI_TIENDA.sql
+```
+
+2. Sube/reemplaza en GitHub:
+
+```txt
+admin.html
+admin.js
+index.html
+public-catalog.js
+styles.css
+signup.html
+signup.js
+README_CLOUD.md
+PEGAR_EN_SUPABASE_V42_MULTI_TIENDA.sql
+```
+
+3. No reemplaces `cloud-config.js`.
