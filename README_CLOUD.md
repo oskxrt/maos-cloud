@@ -167,3 +167,13 @@ Reemplaza:
 - PEGAR_EN_SUPABASE_V40_WHITE_LABEL.sql
 
 No reemplaces `cloud-config.js` si ya tiene tus llaves correctas.
+
+
+## v41 White Label + Super Usuario
+
+- Se corrigió el cambio de tema para que los 5 diseños sean más visibles y diferenciados en el catálogo.
+- Se agregó botón **Restablecer colores** dentro de Tienda / Tema.
+- El botón aplica la paleta base del diseño seleccionado.
+- Se agregó estructura `platform_admins` para dejar preparado el rol de **super usuario**.
+- Oscar queda agregado como super usuario inicial con `oskxrt@gmail.com` en el SQL v41.
+- En el panel aparece un badge de **SUPER USUARIO** cuando el correo autenticado está registrado en `platform_admins`.

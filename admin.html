@@ -30,6 +30,7 @@
         <div>
           <h2 id="sidebarBrandName">MAOS Control</h2>
           <p class="muted">Inventario · Clientes · Pedidos · Abonos</p>
+          <span id="superUserBadge" class="super-user-badge hidden">SUPER USUARIO</span>
         </div>
       </div>
       <nav class="nav">
@@ -152,6 +153,7 @@
           </div>
           <div class="toolbar">
             <a class="button ghost" href="index.html" target="_blank">Ver catálogo</a>
+            <button class="ghost" id="resetThemeColorsBtn" type="button">Restablecer colores</button>
             <button class="primary" id="saveBrandBtn">Guardar tienda</button>
           </div>
         </div>
@@ -186,6 +188,7 @@
               <label>Color principal<input id="accentColorInput" type="color" value="#111111"></label>
               <label>Fondo<input id="backgroundColorInput" type="color" value="#f8f7f3"></label>
               <label>Texto<input id="textColorInput" type="color" value="#111111"></label>
+              <p class="wide field-hint">El botón restablecer aplica la paleta base del diseño seleccionado.</p>
               <label class="wide toggle-row"><input id="showFeaturedInput" type="checkbox"> Mostrar sección de novedades</label>
               <label class="wide">Título de novedades<input id="featuredTitleInput" placeholder="Novedades"></label>
             </div>

@@ -64,9 +64,19 @@ function statusIsPublic(product) {
 }
 
 function applyTheme() {
-  const theme = settings.theme_id || 'minimal-street';
+  const themeMap = {
+    minimal: 'minimal-street',
+    streetwear: 'minimal-street',
+    boutique: 'boutique-clean',
+    drop: 'drop-catalog',
+    market: 'market-grid',
+    editorial: 'editorial-simple'
+  };
+  const rawTheme = settings.theme_id || 'minimal-street';
+  const theme = themeMap[rawTheme] || rawTheme || 'minimal-street';
   document.body.classList.forEach(cls => { if (cls.startsWith('wl-theme-')) document.body.classList.remove(cls); });
   document.body.classList.add(`wl-theme-${theme}`);
+  document.body.dataset.storeTheme = theme;
   document.documentElement.style.setProperty('--wl-accent', settings.accent_color || '#111111');
   document.documentElement.style.setProperty('--wl-bg', settings.background_color || '#f8f7f3');
   document.documentElement.style.setProperty('--wl-text', settings.text_color || '#111111');

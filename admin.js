@@ -18,6 +18,15 @@ let webOrders = [];
 let adminOrders = [];
 let customers = [];
 let settings = { brand_name: cfg.BRAND_NAME || 'MAOS', store_whatsapp: cfg.STORE_WHATSAPP || '523112648451', logo_url: '', facebook_url: '', instagram_url: '', tiktok_url: '', theme_id: 'minimal-street', accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111', show_featured: false, featured_title: 'Novedades' };
+let currentUser = null;
+let isSuperUser = false;
+const THEME_DEFAULTS = {
+  'minimal-street': { accent_color: '#111111', background_color: '#f8f7f3', text_color: '#111111' },
+  'boutique-clean': { accent_color: '#8a5a44', background_color: '#fbf7f2', text_color: '#231f20' },
+  'drop-catalog': { accent_color: '#111111', background_color: '#ffffff', text_color: '#111111' },
+  'market-grid': { accent_color: '#1f2937', background_color: '#f3f4f6', text_color: '#111827' },
+  'editorial-simple': { accent_color: '#314236', background_color: '#f7f4eb', text_color: '#161616' }
+};
 let currentImages = [];
 let selectedFiles = [];
 let editingOrder = null;
@@ -25,6 +34,19 @@ let receiptOrderId = null;
 
 function setStatus(id, msg) { const el = $(id); if (el) el.textContent = msg || ''; }
 function brandInitial() { return (settings.brand_name || cfg.BRAND_NAME || 'M').slice(0,1).toUpperCase(); }
+function applyThemeInputs(themeId = $('#themeIdInput')?.value || 'minimal-street') {
+  const defaults = THEME_DEFAULTS[themeId] || THEME_DEFAULTS['minimal-street'];
+  if ($('#accentColorInput')) $('#accentColorInput').value = defaults.accent_color;
+  if ($('#backgroundColorInput')) $('#backgroundColorInput').value = defaults.background_color;
+  if ($('#textColorInput')) $('#textColorInput').value = defaults.text_color;
+  setStatus('#settingsStatus', 'Colores restablecidos para el diseño seleccionado. No olvides guardar.');
+}
+function applyAdminThemePreview() {
+  const theme = $('#themeIdInput')?.value || settings.theme_id || 'minimal-street';
+  document.body.classList.forEach(cls => { if (cls.startsWith('admin-preview-theme-')) document.body.classList.remove(cls); });
+  document.body.classList.add(`admin-preview-theme-${theme}`);
+  $$('.theme-preview-card').forEach(card => card.classList.toggle('active', card.dataset.themeChoice === theme));
+}
 function renderBrand() {
   const name = settings.brand_name || cfg.BRAND_NAME || 'MAOS';
   const logo = settings.logo_url || '';
@@ -48,12 +70,28 @@ function renderBrand() {
   if ($('#showFeaturedInput')) $('#showFeaturedInput').checked = settings.show_featured === true || settings.show_featured === 'true';
   if ($('#featuredTitleInput')) $('#featuredTitleInput').value = settings.featured_title || 'Novedades';
   $$('.theme-preview-card').forEach(card => card.classList.toggle('active', card.dataset.themeChoice === (settings.theme_id || 'minimal-street')));
+  applyAdminThemePreview();
+  const badge = $('#superUserBadge');
+  if (badge) badge.classList.toggle('hidden', !isSuperUser);
 }
 
 async function loadSettings() {
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 'main').maybeSingle();
   if (!error && data) settings = { ...settings, ...data };
   renderBrand();
+}
+async function loadSuperUserState() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    currentUser = data?.user || null;
+    const email = String(currentUser?.email || '').toLowerCase();
+    if (!email) { isSuperUser = false; return; }
+    const { data: row, error } = await supabase.from('platform_admins').select('email,is_active').eq('email', email).maybeSingle();
+    isSuperUser = !error && !!row?.is_active;
+  } catch (err) {
+    isSuperUser = false;
+    console.warn('Sin tabla de super usuario todavía:', err);
+  }
 }
 
 async function saveBrandSettings() {
@@ -88,7 +126,7 @@ async function saveBrandSettings() {
   if (error) { setStatus('#settingsStatus', `${error.message}. Corre primero el SQL v40 en Supabase si aún no lo hiciste.`); return; }
   if ($('#brandLogoInput')) $('#brandLogoInput').value = '';
   renderBrand();
-  setStatus('#settingsStatus', 'Tienda guardada. Refresca el catálogo para ver los cambios.');
+  setStatus('#settingsStatus', 'Tienda guardada. Abre o refresca el catálogo para ver los cambios.');
 }
 
 async function requireSession() {
@@ -99,6 +137,7 @@ function showLogin() { $('#loginView').classList.remove('hidden'); $('#adminView
 async function showAdmin() {
   $('#loginView').classList.add('hidden');
   $('#adminView').classList.remove('hidden');
+  await loadSuperUserState();
   await loadSettings();
   await Promise.all([loadProducts(), loadWebOrders(), loadAdminOrders(), loadCustomers()]);
   renderDashboard();
@@ -942,8 +981,16 @@ $('#addPaymentBtn').addEventListener('click', () => addPaymentRow({ amount: 0, m
 $('#orderDiscount').addEventListener('input', updateOrderPreview);
 $('#importBtn').addEventListener('click', importLocalJson);
 $('#saveBrandBtn').addEventListener('click', saveBrandSettings);
-$('#themeIdInput')?.addEventListener('change', renderBrand);
-$$('.theme-preview-card').forEach(card => card.addEventListener('click', () => { $('#themeIdInput').value = card.dataset.themeChoice; renderBrand(); }));
+$('#resetThemeColorsBtn')?.addEventListener('click', () => applyThemeInputs());
+$('#themeIdInput')?.addEventListener('change', () => {
+  applyAdminThemePreview();
+  setStatus('#settingsStatus', 'Diseño seleccionado. Guarda para aplicarlo al catálogo.');
+});
+$$('.theme-preview-card').forEach(card => card.addEventListener('click', () => {
+  $('#themeIdInput').value = card.dataset.themeChoice;
+  applyAdminThemePreview();
+  setStatus('#settingsStatus', 'Diseño seleccionado. Guarda para aplicarlo al catálogo.');
+}));
 $('#productCategory').addEventListener('input', () => { if (!$('#productSku').value.trim()) $('#productSku').value = nextSku($('#productCategory').value, $('#productName').value); });
 $('#productName').addEventListener('input', () => { if (!$('#productSku').value.trim()) $('#productSku').value = nextSku($('#productCategory').value, $('#productName').value); });
 $('#downloadReceiptBtn').addEventListener('click', downloadReceiptImage);
