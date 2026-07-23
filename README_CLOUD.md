@@ -239,3 +239,13 @@ PEGAR_EN_SUPABASE_V42_MULTI_TIENDA.sql
 ```
 
 3. No reemplaces `cloud-config.js`.
+
+
+## v43 fix Super Admin
+
+- Corrige el error `infinite recursion detected in policy for relation "platform_admins"`.
+- Rehace las políticas RLS de `stores`, `store_members` y `platform_admins` usando funciones `SECURITY DEFINER`.
+- Mantiene a `oskxrt@gmail.com` como super usuario.
+- No borra productos, clientes, pedidos ni imágenes.
+
+Corre `PEGAR_EN_SUPABASE_V43_FIX_SUPER_ADMIN.sql` en Supabase y refresca `/admin`.
